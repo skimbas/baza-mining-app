@@ -24,3 +24,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes streak-ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(59 130 246 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgb(59 130 246 / 0);
+  }
+}

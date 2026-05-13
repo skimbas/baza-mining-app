@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BAZA Mining App
 
-## Getting Started
+Frontend for **BAZA** on **Base Sepolia**: wallet connect, off-chain clicker with energy, on-chain **$BAZA** claims, and **7-day check-in streaks** tied to the Baza token contract.
 
-First, run the development server:
+## Contract (Base Sepolia)
+
+**BazaToken:** `0x4299B4BC4685642688896C6834ACa0b6ad4083F7`
+
+Configured in `src/config/contracts.ts` as `BAZA_TOKEN_ADDRESS`.
+
+## Mechanics (short)
+
+- **7-day streaks:** `dailyCheckIn` on the token; streak position cycles every 7 days; rewards **10 $BAZA** on days 1–6 and **20 $BAZA** on day 7 (see `contracts/BazaToken.sol` and redeploy notes if you change logic).
+- **Clicker:** local taps build “unclaimed” balance; **Claim to wallet** mints accumulated amount on-chain (`claimTokens`).
+- **Energy:** taps consume energy that regenerates over time (UI only).
+
+## Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Use a wallet on **Base Sepolia** and the contract address above.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Stack
 
-## Learn More
+Next.js (App Router), React, Tailwind CSS, wagmi/viem, Framer Motion, canvas-confetti (day-7 streak).
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Backup your deploy keys (important)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Private keys and mnemonics must never be committed to this repo.** Store them outside the project (password manager, hardware wallet, encrypted backup).
 
-## Deploy on Vercel
+Typical places people keep deploy credentials (check what **you** actually use):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **`.env` / `.env.local`** in the project or parent folder (often gitignored) — API keys, `PRIVATE_KEY`, `MNEMONIC`, RPC URLs.
+- **Foundry / Cast:** keystores under something like **`.foundry/keystores/`** in your home directory, or env vars used when you ran `forge create` / `cast send`.
+- **Shell profile** (`~/.zshrc`, `~/.bashrc`) if you ever exported a key (avoid this; prefer env files + secure backup).
+- **Notes / password manager** where you saved the seed after deploy.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+After a deploy you may also have **`deployed_address.txt`** in the repo (address only — safe to commit; it is not a secret). **Rotate anything that was ever pasted into chat or CI logs.**
+
+Reconcile on-chain `symbol()` / bytecode with your local `contracts/BazaToken.sol` after upgrades; update `BAZA_TOKEN_ADDRESS` when you deploy a new token.
