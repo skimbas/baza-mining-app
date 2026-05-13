@@ -1,7 +1,6 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
-/node_modules
+node_modules/
+**/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -9,6 +8,8 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # testing
 /coverage
@@ -23,6 +24,7 @@
 # misc
 .DS_Store
 *.pem
+*.key
 
 # debug
 npm-debug.log*
@@ -30,8 +32,18 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env / secrets (do not push keys or RPC secrets)
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+!.env.example
+!.env*.example
+secrets.json
+**/secrets.json
+mnemonic.txt
+**/mnemonic.txt
 
 # vercel
 .vercel
