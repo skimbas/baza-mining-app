@@ -1,0 +1,6 @@
+[submodule "based-puzzle3"]
+	path = based-puzzle3
+	url = https://github.com/skimbas/based-puzzle3.git
+[submodule "contract"]
+	path = contract
+	url = https://github.com/skimbas/base-puzzle-contract.git

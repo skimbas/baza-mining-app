@@ -1,31 +1,49 @@
 # BAZA Mining App
 
-Frontend for **BAZA** on **Base** (Mainnet, chain id `8453`): wallet connect, off-chain clicker with energy, on-chain **$BAZA** claims, and **7-day check-in streaks** tied to the Baza token contract.
+Next.js frontend for **BAZA** on **Base Mainnet** (chain id `8453`): wallet connect, off-chain clicker with energy, on-chain **$BAZA** claims, and **7-day check-in streaks** against the deployed Baza token.
 
-## Contract (Base Mainnet)
+## Live contract (Base Mainnet)
 
-Set **`BAZA_TOKEN_ADDRESS`** in `src/config/contracts.ts` after you deploy via Remix (see `DEPLOYMENT_NOTES.md` for a checklist).
+- **BazaToken:** [`0x685cD8bBC7EDac563024D798f19D12fdb2A89887` on Basescan](https://basescan.org/address/0x685cD8bBC7EDac563024D798f19D12fdb2A89887#code) (source verified).
+- App config: `src/config/contracts.ts` → `BAZA_TOKEN_ADDRESS` (must stay in sync with the on-chain deployment).
 
-Current placeholder in repo: `0x0000…0000` until you paste the real address.
+More deploy / verify notes: `DEPLOYMENT_NOTES.md`.
 
-## Mechanics (short)
-
-- **7-day streaks:** `dailyCheckIn` on the token; streak position cycles every 7 days; rewards **10 $BAZA** on days 1–6 and **20 $BAZA** on day 7 (see `contracts/BazaToken.sol` and redeploy notes if you change logic).
-- **Clicker:** local taps build “unclaimed” balance; **Claim to wallet** mints accumulated amount on-chain (`claimTokens`).
-- **Energy:** taps consume energy that regenerates over time (UI only).
-
-## Development
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use a wallet on **Base Mainnet** and the token address configured in `src/config/contracts.ts`.
+Open [http://localhost:3000](http://localhost:3000). Use a wallet on **Base Mainnet** so reads and writes hit the same chain as `BAZA_CHAIN` / `BAZA_TOKEN_ADDRESS`.
+
+Production build:
 
 ```bash
 npm run build
 ```
+
+## Submodules
+
+This repo uses Git submodules (`based-puzzle3`, `contract`). After clone:
+
+```bash
+git submodule update --init --recursive
+```
+
+The `contract` entry points at `https://github.com/skimbas/base-puzzle-contract.git`. If that repository does not exist yet or you use a fork, set your URL before updating:
+
+```bash
+git config submodule.contract.url https://github.com/<you>/<your-forge-repo>.git
+git submodule update --init --recursive
+```
+
+## Mechanics (short)
+
+- **7-day streaks:** `dailyCheckIn` on the token; rewards **10 $BAZA** on days 1–6 and **20 $BAZA** on day 7 (see `contracts/BazaToken.sol`).
+- **Clicker:** local taps build an unclaimed balance; **Claim to wallet** calls `claimTokens` on-chain.
+- **Energy:** taps consume energy that refills over time (UI only).
 
 ## Stack
 
@@ -33,17 +51,8 @@ Next.js (App Router), React, Tailwind CSS, wagmi/viem, Framer Motion, canvas-con
 
 ---
 
-## Backup your deploy keys (important)
+## Backup deploy keys (important)
 
-**Private keys and mnemonics must never be committed to this repo.** Store them outside the project (password manager, hardware wallet, encrypted backup).
+**Never commit private keys or mnemonics.** Keep them in a password manager, hardware wallet, or local `.env` / keystores outside public repos.
 
-Typical places people keep deploy credentials (check what **you** actually use):
-
-- **`.env` / `.env.local`** in the project or parent folder (often gitignored) — API keys, `PRIVATE_KEY`, `MNEMONIC`, RPC URLs.
-- **Foundry / Cast:** keystores under something like **`.foundry/keystores/`** in your home directory, or env vars used when you ran `forge create` / `cast send`.
-- **Shell profile** (`~/.zshrc`, `~/.bashrc`) if you ever exported a key (avoid this; prefer env files + secure backup).
-- **Notes / password manager** where you saved the seed after deploy.
-
-After a deploy you may also have **`deployed_address.txt`** in the repo (address only — safe to commit; it is not a secret). **Rotate anything that was ever pasted into chat or CI logs.**
-
-Reconcile on-chain `symbol()` / bytecode with your local `contracts/BazaToken.sol` after upgrades; update `BAZA_TOKEN_ADDRESS` when you deploy a new token.
+After any deploy, reconcile on-chain `name` / `symbol` / bytecode with `contracts/BazaToken.sol`; update `BAZA_TOKEN_ADDRESS` when you ship a new token.

@@ -1,13 +1,10 @@
 import { base, type Chain } from "wagmi/chains";
 
-/** Base Mainnet — chain id 8453 (use for production after Remix deploy). */
+/** Base Mainnet — chain id 8453. */
 export const BAZA_CHAIN: Chain = base;
 
 export const BAZA_CHAIN_ID = BAZA_CHAIN.id;
 
-/**
- * Paste the BazaToken contract address from Remix (Base Mainnet) here only.
- * Replace the placeholder before using the app on mainnet.
- */
+/** BazaToken (`BazaToken.sol` / Remix deploy) on Base Mainnet — checksummed. */
 export const BAZA_TOKEN_ADDRESS =
-  "0x0000000000000000000000000000000000000000" as const;
+  "0x685cD8bBC7EDac563024D798f19D12fdb2A89887" as const;

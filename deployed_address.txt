@@ -1,2 +1,2 @@
-# Legacy file — the app reads `BAZA_TOKEN_ADDRESS` from `src/config/contracts.ts`.
-# Record new Mainnet deploy details in `DEPLOYMENT_NOTES.md`.
+# BazaToken on Base Mainnet (same value as `BAZA_TOKEN_ADDRESS` in `src/config/contracts.ts`).
+0x685cD8bBC7EDac563024D798f19D12fdb2A89887

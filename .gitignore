@@ -18,6 +18,10 @@ node_modules/
 /.next/
 /out/
 
+# Foundry (root — BazaToken verify / local compile)
+/forge-artifacts/
+/cache/
+
 # production
 /build
 
