@@ -1,12 +1,12 @@
 # BAZA Mining App
 
-Frontend for **BAZA** on **Base Sepolia**: wallet connect, off-chain clicker with energy, on-chain **$BAZA** claims, and **7-day check-in streaks** tied to the Baza token contract.
+Frontend for **BAZA** on **Base** (Mainnet, chain id `8453`): wallet connect, off-chain clicker with energy, on-chain **$BAZA** claims, and **7-day check-in streaks** tied to the Baza token contract.
 
-## Contract (Base Sepolia)
+## Contract (Base Mainnet)
 
-**BazaToken:** `0x4299B4BC4685642688896C6834ACa0b6ad4083F7`
+Set **`BAZA_TOKEN_ADDRESS`** in `src/config/contracts.ts` after you deploy via Remix (see `DEPLOYMENT_NOTES.md` for a checklist).
 
-Configured in `src/config/contracts.ts` as `BAZA_TOKEN_ADDRESS`.
+Current placeholder in repo: `0x0000…0000` until you paste the real address.
 
 ## Mechanics (short)
 
@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use a wallet on **Base Sepolia** and the contract address above.
+Open [http://localhost:3000](http://localhost:3000). Use a wallet on **Base Mainnet** and the token address configured in `src/config/contracts.ts`.
 
 ```bash
 npm run build

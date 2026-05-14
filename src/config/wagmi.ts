@@ -1,16 +1,16 @@
+import { BAZA_CHAIN } from "@/config/contracts";
 import { createConfig, http } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
 import { baseAccount, injected } from "wagmi/connectors";
 
 export const wagmiConfig = createConfig({
-  chains: [baseSepolia],
+  chains: [BAZA_CHAIN],
   connectors: [
     injected({ target: "metaMask" }),
     baseAccount({
-      appName: "Base new game",
+      appName: "BAZA Mining App",
     }),
   ],
   transports: {
-    [baseSepolia.id]: http(),
+    [BAZA_CHAIN.id]: http(),
   },
 });

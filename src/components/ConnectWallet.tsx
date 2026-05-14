@@ -1,7 +1,7 @@
 "use client";
 
 import bazaTokenArtifact from "@/abi/BazaToken.json";
-import { BAZA_TOKEN_ADDRESS } from "@/config/contracts";
+import { BAZA_CHAIN, BAZA_TOKEN_ADDRESS } from "@/config/contracts";
 import { StreakVisual } from "@/components/StreakVisual";
 import { useClicker } from "@/hooks/useClicker";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
@@ -17,7 +17,6 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
 
 const bazaTokenAbi = bazaTokenArtifact.abi;
 
@@ -125,7 +124,7 @@ export function ConnectWallet() {
   const [coinHover, setCoinHover] = useState(false);
   const [coinPressedLocal, setCoinPressedLocal] = useState(false);
 
-  const isCorrectNetwork = chainId === baseSepolia.id;
+  const isCorrectNetwork = chainId === BAZA_CHAIN.id;
 
   const { data: streakData, refetch: refetchStreak } = useReadContract({
     address: BAZA_TOKEN_ADDRESS,
@@ -325,11 +324,11 @@ export function ConnectWallet() {
         {!isCorrectNetwork ? (
           <button
             type="button"
-            onClick={() => switchChain({ chainId: baseSepolia.id })}
+            onClick={() => switchChain({ chainId: BAZA_CHAIN.id })}
             disabled={isSwitchingChain}
             className="mb-4 w-full rounded-xl bg-orange-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:bg-slate-600"
           >
-            {isSwitchingChain ? "Switching..." : "Switch to Base Sepolia"}
+            {isSwitchingChain ? "Switching..." : `Switch to ${BAZA_CHAIN.name}`}
           </button>
         ) : null}
 

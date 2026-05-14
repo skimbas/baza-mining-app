@@ -32,18 +32,16 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env / secrets (do not push keys or RPC secrets)
-.env
-.env.local
-.env.*.local
-**/.env
-**/.env.local
+# env / secrets — `.env*` blocks all variants; allow only committed examples
+.env*
 !.env.example
 !.env*.example
 secrets.json
 **/secrets.json
 mnemonic.txt
 **/mnemonic.txt
+*.keystore
+**/keystore/
 
 # vercel
 .vercel
