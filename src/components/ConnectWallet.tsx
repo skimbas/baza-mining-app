@@ -1,24 +1,27 @@
 "use client";
 
-import bazaTokenArtifact from "@/abi/BazaToken.json";
-import { BAZA_CHAIN, BAZA_TOKEN_ADDRESS } from "@/config/contracts";
+import { ClaimTokensButton } from "@/components/ClaimTokensButton";
 import { StreakVisual } from "@/components/StreakVisual";
+import {
+  BAZA_CHAIN,
+  BAZA_TOKEN_ABI,
+  BAZA_TOKEN_ADDRESS,
+} from "@/config/contracts";
 import { useClicker } from "@/hooks/useClicker";
+import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
-  useAccount,
   useChainId,
   useConnect,
+  useConnection,
   useDisconnect,
   useReadContract,
   useSwitchChain,
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
-
-const bazaTokenAbi = bazaTokenArtifact.abi;
 
 /** Repeating tile for watermark behind the BAZA coin (white fill; layer uses opacity 0.05). */
 const BAZA_WATERMARK_DATA_URI =
@@ -87,15 +90,33 @@ function formatCountdownSeconds(totalSeconds: bigint): string {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function connectorLabel(connectorId: string, name: string) {
+  const id = connectorId.toLowerCase();
+  if (id.includes("base") || name.toLowerCase().includes("base"))
+    return "Base Smart Wallet";
+  if (id.includes("injected") || name.toLowerCase().includes("meta"))
+    return "MetaMask (browser)";
+  return name;
+}
+
 export function ConnectWallet() {
   const mounted = useSyncExternalStore(
     () => () => undefined,
     () => true,
     () => false,
   );
-  const { address, isConnected } = useAccount();
+  const {
+    address,
+    isConnected,
+    isConnecting,
+    isReconnecting,
+    isDisconnected,
+    status,
+  } = useConnection();
+  const { supportsAtomicBatch, supportsPaymasterService } =
+    useWalletCapabilities();
   const chainId = useChainId();
-  const { connect, connectors, isPending } = useConnect();
+  const { connect, connectors, isPending: isConnectPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { writeContract, data: txHash, isPending: isWritePending } =
@@ -117,7 +138,7 @@ export function ConnectWallet() {
     registerClick,
     resetClicks,
   } = useClicker();
-  const txActionRef = useRef<"claim" | "checkin" | null>(null);
+  const txActionRef = useRef<"checkin" | null>(null);
   const [nowSec, setNowSec] = useState(() =>
     Math.floor(Date.now() / 1000),
   );
@@ -128,7 +149,7 @@ export function ConnectWallet() {
 
   const { data: streakData, refetch: refetchStreak } = useReadContract({
     address: BAZA_TOKEN_ADDRESS,
-    abi: bazaTokenAbi,
+    abi: BAZA_TOKEN_ABI,
     functionName: "currentStreak",
     args: address ? [address] : undefined,
     query: {
@@ -139,7 +160,7 @@ export function ConnectWallet() {
 
   const { data: balanceData, refetch: refetchBalance } = useReadContract({
     address: BAZA_TOKEN_ADDRESS,
-    abi: bazaTokenAbi,
+    abi: BAZA_TOKEN_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
     query: {
@@ -151,7 +172,7 @@ export function ConnectWallet() {
   const { data: lastCheckInData, refetch: refetchLastCheckIn } =
     useReadContract({
       address: BAZA_TOKEN_ADDRESS,
-      abi: bazaTokenAbi,
+      abi: BAZA_TOKEN_ABI,
       functionName: "lastCheckIn",
       args: address ? [address] : undefined,
       query: {
@@ -194,9 +215,10 @@ export function ConnectWallet() {
   const streakBrokenUi =
     lastCheckInSec > BigInt(0) && nowBig > lastCheckInSec + STREAK_GRACE_SEC;
 
-  const isTxPending = isWritePending || isConfirmingTx;
+  const isCheckInPending = isWritePending || isConfirmingTx;
   const unclaimedBz = clicks;
-  const canClaim = unclaimedBz > 0 && !isTxPending && isCorrectNetwork;
+  const canClaim =
+    unclaimedBz > 0 && isCorrectNetwork && !isCheckInPending;
 
   const coinInteractive = canClick && isCorrectNetwork;
   const coinShadow =
@@ -217,10 +239,6 @@ export function ConnectWallet() {
 
     const action = txActionRef.current;
     txActionRef.current = null;
-
-    if (action === "claim") {
-      resetClicks();
-    }
 
     void (async () => {
       const streakResult = await refetchStreak();
@@ -248,26 +266,14 @@ export function ConnectWallet() {
     refetchBalance,
     refetchLastCheckIn,
     refetchStreak,
-    resetClicks,
   ]);
 
-  const handleClaim = () => {
-    if (!canClaim) return;
-    txActionRef.current = "claim";
-    writeContract({
-      address: BAZA_TOKEN_ADDRESS,
-      abi: bazaTokenAbi,
-      functionName: "claimTokens",
-      args: [BigInt(unclaimedBz)],
-    });
-  };
-
   const handleDailyCheckIn = () => {
-    if (isTxPending || !isCorrectNetwork || !canDailyCheckIn) return;
+    if (isCheckInPending || !isCorrectNetwork || !canDailyCheckIn) return;
     txActionRef.current = "checkin";
     writeContract({
       address: BAZA_TOKEN_ADDRESS,
-      abi: bazaTokenAbi,
+      abi: BAZA_TOKEN_ABI,
       functionName: "dailyCheckIn",
     });
   };
@@ -283,22 +289,41 @@ export function ConnectWallet() {
   }
 
   if (!isConnected || !address) {
+    const statusLine = isReconnecting
+      ? "Restoring your session…"
+      : isConnecting || isConnectPending
+        ? "Opening wallet…"
+        : isDisconnected
+          ? "Choose how to connect"
+          : "Connect wallet to start mining BAZA";
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
         <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900/70 p-6 shadow-xl shadow-blue-500/10">
-          <p className="mb-4 text-center text-sm text-slate-300">
-            Connect wallet to start mining BAZA
+          <p className="mb-1 text-center text-xs font-medium uppercase tracking-wide text-slate-500">
+            {status === "reconnecting"
+              ? "Reconnecting"
+              : status === "connecting"
+                ? "Connecting"
+                : "Disconnected"}
           </p>
+          <p className="mb-4 text-center text-sm text-slate-300">{statusLine}</p>
           <div className="flex flex-col gap-3">
             {connectors.map((connector) => (
               <button
                 key={connector.uid}
                 type="button"
-                disabled={isPending}
+                disabled={
+                  isConnectPending ||
+                  isConnecting ||
+                  isReconnecting
+                }
                 onClick={() => connect({ connector })}
                 className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-600"
               >
-                {isPending ? "Connecting..." : `Connect ${connector.name}`}
+                {isConnectPending || isConnecting
+                  ? "Connecting…"
+                  : `Connect with ${connectorLabel(connector.id, connector.name)}`}
               </button>
             ))}
           </div>
@@ -310,15 +335,27 @@ export function ConnectWallet() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-6 text-slate-100">
       <div className="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900/80 px-8 py-8 shadow-[0_0_60px_rgba(59,130,246,0.15)] backdrop-blur sm:px-10 sm:py-9">
-        <div className="mb-4 flex items-center justify-between text-sm text-slate-300">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-300">
           <span>{shortenAddress(address)}</span>
-          <button
-            type="button"
-            onClick={() => disconnect()}
-            className="rounded-lg border border-slate-700 px-3 py-1.5 transition hover:border-slate-500"
-          >
-            Disconnect
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {supportsAtomicBatch ? (
+              <span className="rounded-full border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 text-[11px] text-emerald-200">
+                EIP-5792 batch
+              </span>
+            ) : null}
+            {supportsPaymasterService ? (
+              <span className="rounded-full border border-violet-500/40 bg-violet-950/40 px-2 py-0.5 text-[11px] text-violet-200">
+                Paymaster
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => disconnect()}
+              className="rounded-lg border border-slate-700 px-3 py-1.5 transition hover:border-slate-500"
+            >
+              Disconnect
+            </button>
+          </div>
         </div>
 
         {!isCorrectNetwork ? (
@@ -489,11 +526,11 @@ export function ConnectWallet() {
           type="button"
           onClick={handleDailyCheckIn}
           disabled={
-            isTxPending || !isCorrectNetwork || !canDailyCheckIn
+            isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
           }
           className="mb-2 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-600"
         >
-          {isTxPending ? "Transaction Pending..." : "Daily Check-in"}
+          {isCheckInPending ? "Transaction Pending..." : "Daily Check-in"}
         </button>
 
         {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
@@ -507,29 +544,13 @@ export function ConnectWallet() {
           <div className="mb-3 h-4" aria-hidden />
         )}
 
-        <button
-          type="button"
-          onClick={handleClaim}
+        <ClaimTokensButton
+          amount={BigInt(unclaimedBz)}
           disabled={!canClaim}
-          className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition ${
-            unclaimedBz > 50
-              ? "bg-blue-500 shadow-[0_0_30px_rgba(56,189,248,0.6)] hover:bg-blue-400"
-              : "bg-slate-700"
-          } disabled:cursor-not-allowed disabled:opacity-70`}
-        >
-          {isTxPending ? (
-            <span className="inline-flex items-center gap-2">
-              <motion.span
-                className="h-4 w-4 rounded-full border-2 border-white/50 border-t-white"
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
-              />
-              Transaction Pending...
-            </span>
-          ) : (
-            "Claim to wallet"
-          )}
-        </button>
+          supportsAtomicBatch={supportsAtomicBatch}
+          highlight={unclaimedBz > 50}
+          onConfirmed={() => resetClicks()}
+        />
       </div>
     </main>
   );

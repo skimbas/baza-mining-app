@@ -1,7 +1,9 @@
-import { base, type Chain } from "wagmi/chains";
+import { base } from "wagmi/chains";
 
-/** Base Mainnet — chain id 8453. */
-export const BAZA_CHAIN: Chain = base;
+export { BAZA_TOKEN_ABI } from "./abi";
+
+/** Base Mainnet — chain id 8453 (typed as `typeof base` for wagmi chain literals). */
+export const BAZA_CHAIN = base;
 
 export const BAZA_CHAIN_ID = BAZA_CHAIN.id;
 
