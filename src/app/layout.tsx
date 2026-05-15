@@ -8,6 +8,12 @@ import { getConfig } from "@/config/wagmi";
 import { ProvidersShell } from "./providers-loader";
 import "./globals.css";
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL != null
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000");
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -18,12 +24,33 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/** Short line for meta + social cards (keep in sync with product copy). */
+const BAZA_TAGLINE =
+  "Mine and claim $BAZA on Base — streak check-ins, on-chain claims, Base Smart Wallet & MetaMask.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "BAZA Mining",
-  description:
-    "Mine and claim $BAZA on Base with streak check-ins — Base Smart Wallet and MetaMask supported.",
+  description: BAZA_TAGLINE,
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo.png", type: "image/png", sizes: "256x256" },
+    ],
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "BAZA Mining",
+    description: BAZA_TAGLINE,
+    images: [
+      {
+        url: "/logo.png",
+        width: 256,
+        height: 256,
+        alt: "BAZA Mining",
+        type: "image/png",
+      },
+    ],
   },
   other: {
     "base:app_id": "69861ce98dcaa0daf5755fcc",
@@ -51,4 +78,3 @@ export default async function RootLayout({
     </html>
   );
 }
-// redeploy
