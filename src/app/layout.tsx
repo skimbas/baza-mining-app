@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BAZA Mining App",
+  title: "BAZA Mining",
   description:
     "Mine and claim $BAZA on Base with streak check-ins — Base Smart Wallet and MetaMask supported.",
   icons: {
