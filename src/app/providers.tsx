@@ -1,7 +1,8 @@
 "use client";
 
+import sdk from "@farcaster/frame-sdk";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import type { State } from "wagmi";
 import { WagmiProvider } from "wagmi";
 
@@ -15,6 +16,10 @@ type ProvidersProps = {
 export function Providers({ children, initialState }: ProvidersProps) {
   const [config] = useState(() => getConfig());
   const [queryClient] = useState(() => new QueryClient());
+
+  useEffect(() => {
+    void sdk.actions.ready();
+  }, []);
 
   return (
     <WagmiProvider config={config} initialState={initialState}>
