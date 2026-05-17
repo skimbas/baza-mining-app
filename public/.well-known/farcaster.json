@@ -13,6 +13,15 @@
     "buttonTitle": "Start Mining",
     "splashImageUrl": "https://baza-mining-app.vercel.app/logo.png",
     "splashBackgroundColor": "#0052FF",
-    "webhookUrl": "https://baza-mining-app.vercel.app/api/webhook"
+    "webhookUrl": "https://baza-mining-app.vercel.app/api/webhook",
+    "subtitle": "Build your streak, mine BAZA.",
+    "description": "The premier onchain mining experience on Base. Engage daily, build your streak, and earn rewards.",
+    "primaryCategory": "games",
+    "tags": ["mining", "base", "rewards"],
+    "tagline": "Build your streak, mine BAZA.",
+    "ogTitle": "BAZA Mining — Daily Onchain Rewards",
+    "ogDescription": "Join the BAZA Mining community on Base. Build daily streaks and earn rewards.",
+    "ogImageUrl": "https://baza-mining-app.vercel.app/logo.png",
+    "castShareUrl": "https://warpcast.com/~/compose?text=I'm%20mining%20$BAZA%20on%20Base!%20Join%20me%20and%20build%20your%20streak:&embeds[]=https://baza-mining-app.vercel.app"
   }
 }
