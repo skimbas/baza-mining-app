@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "manifest:create": "node scripts/try-farcaster-cli.mjs",
+    "manifest:create:local": "node scripts/generate-manifest.mjs --interactive",
     "generate:manifest": "node scripts/generate-manifest.mjs"
   },
   "dependencies": {
@@ -20,6 +22,7 @@
     "wagmi": "^3.6.11"
   },
   "devDependencies": {
+    "@clack/prompts": "^1.4.0",
     "@farcaster/jfs": "^0.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/canvas-confetti": "^1.9.0",
