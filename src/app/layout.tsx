@@ -54,8 +54,7 @@ export const metadata: Metadata = {
   },
   other: {
     "base:app_id": "69861ce98dcaa0daf5755fcc",
-    "talentapp:project_verification":
-      "050ae6ae47c19734702b4db87c31051af3c4566685cc57f4ad72674477e369f74c4573e9e9e235e01654899a505aeb764575c4d26",
+    "talentapp:project_verification": "050ae6ae47c19734702b4db87c31051af3c4566685cc57f4ad72674477e369f74c4573e9e9e235e01654899a505aeb764575c4d26",
   },
 };
 
@@ -72,12 +71,6 @@ export default async function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <meta
-          name="talentapp:project_verification"
-          content="050ae6ae47c19734702b4db87c31051af3c4566685cc57f4ad72674477e369f74c4573e9e9e235e01654899a505aeb764575c4d26"
-        />
-      </head>
       <body className="flex min-h-full flex-col">
         <ProvidersShell initialState={initialState}>
           {children}
