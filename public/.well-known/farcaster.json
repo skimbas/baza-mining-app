@@ -1,4 +1,9 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjczODkxMywidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEM5ZUQ0NTE3YzE0RTA1NWZjRjI3NDI2NTk4NTVkMDI2RTY0MzViOTAifQ",
+    "payload": "eyJkb21haW4iOiJiYXphLW1pbmluZy1hcHAudmVyY2VsLmFwcCJ9",
+    "signature": "06NaJwYz18XeIKNEE/5d7yg5uCRuJeAAQss/1NpLWIw+FRHfyqGlnY6I2oT8JL4BOCoH1WDPbTsiBZ13Ju4XdRs="
+  },
   "frame": {
     "version": "1",
     "name": "BAZA Mining",
@@ -7,6 +12,7 @@
     "imageUrl": "https://baza-mining-app.vercel.app/logo.png",
     "buttonTitle": "Start Mining",
     "splashImageUrl": "https://baza-mining-app.vercel.app/logo.png",
-    "splashBackgroundColor": "#0052FF"
+    "splashBackgroundColor": "#0052FF",
+    "webhookUrl": "https://baza-mining-app.vercel.app/api/webhook"
   }
 }
