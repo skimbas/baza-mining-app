@@ -14,6 +14,9 @@ const MAX_ENERGY = 500;
 const ENERGY_REGEN_PER_SEC = 2;
 const CLICKS_STORAGE_KEY = "base-coin-clicks";
 
+/** Minimum taps before the user can claim mined $BAZA to wallet. */
+export const REQUIRED_TAPS_FOR_CLAIM = 5;
+
 export function useClicker() {
   const [clicks, setClicks] = useState(() => {
     if (typeof window === "undefined") return 0;
@@ -40,6 +43,13 @@ export function useClicker() {
   const canClick = energy > 0;
 
   const energyPercent = useMemo(() => (energy / MAX_ENERGY) * 100, [energy]);
+
+  const claimTapProgressPercent = useMemo(
+    () =>
+      (Math.min(clicks, REQUIRED_TAPS_FOR_CLAIM) / REQUIRED_TAPS_FOR_CLAIM) *
+      100,
+    [clicks],
+  );
 
   const registerClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (!canClick) return;
@@ -80,6 +90,8 @@ export function useClicker() {
     energy,
     maxEnergy: MAX_ENERGY,
     energyPercent,
+    claimTapProgressPercent,
+    requiredTapsForClaim: REQUIRED_TAPS_FOR_CLAIM,
     canClick,
     coinPressed,
     particles,

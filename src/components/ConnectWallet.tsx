@@ -133,6 +133,8 @@ export function ConnectWallet() {
     energy,
     maxEnergy,
     energyPercent,
+    claimTapProgressPercent,
+    requiredTapsForClaim,
     canClick,
     particles,
     registerClick,
@@ -217,8 +219,11 @@ export function ConnectWallet() {
 
   const isCheckInPending = isWritePending || isConfirmingTx;
   const unclaimedBz = clicks;
+  const tapsTowardClaim = Math.min(clicks, requiredTapsForClaim);
   const canClaim =
-    unclaimedBz > 0 && isCorrectNetwork && !isCheckInPending;
+    unclaimedBz >= requiredTapsForClaim &&
+    isCorrectNetwork &&
+    !isCheckInPending;
 
   const coinInteractive = canClick && isCorrectNetwork;
   const coinShadow =
@@ -391,9 +396,25 @@ export function ConnectWallet() {
 
         <StreakVisual currentStreak={streakBig} />
 
-        <p className="mb-4 text-center text-lg font-semibold text-blue-300">
+        <p className="mb-3 text-center text-lg font-semibold text-blue-300">
           Unclaimed $BAZA: {unclaimedBz}
         </p>
+
+        <motion.div className="mb-5">
+          <motion.div className="mb-2 flex justify-between text-xs text-slate-400">
+            <span>Taps to claim</span>
+            <span>
+              {tapsTowardClaim}/{requiredTapsForClaim}
+            </span>
+          </motion.div>
+          <motion.div className="h-3 w-full overflow-hidden rounded-full bg-slate-800">
+            <motion.div
+              className="h-full bg-gradient-to-r from-violet-500 to-blue-400"
+              animate={{ width: `${claimTapProgressPercent}%` }}
+              transition={{ duration: 0.2 }}
+            />
+          </motion.div>
+        </motion.div>
 
         <div className="relative mb-6 flex min-h-[15rem] justify-center py-2">
           <div
@@ -548,7 +569,7 @@ export function ConnectWallet() {
           amount={BigInt(unclaimedBz)}
           disabled={!canClaim}
           supportsAtomicBatch={supportsAtomicBatch}
-          highlight={unclaimedBz > 50}
+          highlight={unclaimedBz >= requiredTapsForClaim}
           onConfirmed={() => resetClicks()}
         />
       </div>
