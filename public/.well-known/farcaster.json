@@ -1,9 +1,4 @@
 {
-  "accountAssociation": {
-    "header": "",
-    "payload": "",
-    "signature": ""
-  },
   "frame": {
     "version": "1",
     "name": "BAZA Mining",
@@ -12,24 +7,6 @@
     "imageUrl": "https://baza-mining-app.vercel.app/logo.png",
     "buttonTitle": "Start Mining",
     "splashImageUrl": "https://baza-mining-app.vercel.app/logo.png",
-    "splashBackgroundColor": "#0052FF",
-    "subtitle": "Mine $BAZA on Base",
-    "description": "Mine and claim $BAZA on Base with streak check-ins and on-chain claims.",
-    "primaryCategory": "games",
-    "tags": ["base", "mining", "baza", "crypto"]
-  },
-  "miniapp": {
-    "version": "1",
-    "name": "BAZA Mining",
-    "iconUrl": "https://baza-mining-app.vercel.app/logo.png",
-    "homeUrl": "https://baza-mining-app.vercel.app",
-    "imageUrl": "https://baza-mining-app.vercel.app/logo.png",
-    "buttonTitle": "Start Mining",
-    "splashImageUrl": "https://baza-mining-app.vercel.app/logo.png",
-    "splashBackgroundColor": "#0052FF",
-    "subtitle": "Mine $BAZA on Base",
-    "description": "Mine and claim $BAZA on Base with streak check-ins and on-chain claims.",
-    "primaryCategory": "games",
-    "tags": ["base", "mining", "baza", "crypto"]
+    "splashBackgroundColor": "#0052FF"
   }
 }
