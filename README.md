@@ -22,3 +22,4 @@ npm run dev
 ```
 
 Откройте [http://localhost:3000](http://localhost:3000). Для ончейн-действий нужен кошелёк в сети **Base Mainnet**.
+good luck
