@@ -3,6 +3,7 @@
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
 import { ShareBonusButtons } from "@/components/ShareBonusButtons";
 import { StreakVisual } from "@/components/StreakVisual";
+import { TotalTransactionsCounter, TOTAL_TRANSACTIONS_QUERY_KEY } from "@/components/TotalTransactionsCounter";
 import { WrongNetworkPrompt } from "@/components/WrongNetworkPrompt";
 import {
   BAZA_CHAIN,
@@ -13,6 +14,7 @@ import { BAZA_BUILDER_DATA_SUFFIX } from "@/config/builderCode";
 import { useClicker } from "@/hooks/useClicker";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
@@ -119,6 +121,7 @@ export function ConnectWallet() {
   const { supportsAtomicBatch, supportsPaymasterService } =
     useWalletCapabilities();
   const chainId = useChainId();
+  const queryClient = useQueryClient();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
@@ -267,6 +270,10 @@ export function ConnectWallet() {
           void fireSeventhDayConfetti();
         }
       }
+
+      void queryClient.invalidateQueries({
+        queryKey: TOTAL_TRANSACTIONS_QUERY_KEY,
+      });
     })();
   }, [
     txHash,
@@ -275,6 +282,7 @@ export function ConnectWallet() {
     refetchBalance,
     refetchLastCheckIn,
     refetchStreak,
+    queryClient,
   ]);
 
   const handleDailyCheckIn = () => {
@@ -318,6 +326,7 @@ export function ConnectWallet() {
                 : "Disconnected"}
           </p>
           <p className="mb-4 text-center text-sm text-slate-300">{statusLine}</p>
+          <TotalTransactionsCounter className="mb-4" />
           <div className="flex flex-col gap-3">
             {connectors.map((connector) => (
               <button
@@ -383,6 +392,8 @@ export function ConnectWallet() {
             Твой стрик обнулился, начни новый цикл!
           </div>
         ) : null}
+
+        <TotalTransactionsCounter className="mb-4" />
 
         <div className="mb-5 grid grid-cols-2 gap-3 rounded-2xl border border-slate-700 bg-slate-900/80 p-4 text-sm">
           <p>🔥 Streak: {streakLabel}</p>

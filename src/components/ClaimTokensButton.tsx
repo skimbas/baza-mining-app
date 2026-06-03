@@ -19,6 +19,7 @@ import {
   BAZA_TOKEN_ABI,
   BAZA_TOKEN_ADDRESS,
 } from "@/config/contracts";
+import { TOTAL_TRANSACTIONS_QUERY_KEY } from "@/components/TotalTransactionsCounter";
 
 type ClaimTokensButtonProps = {
   /** Whole $BAZA units to mint (matches `claimTokens(uint256 amount)`). */
@@ -83,6 +84,9 @@ export function ClaimTokensButton({
       }
 
       await invalidateReads();
+      void queryClient.invalidateQueries({
+        queryKey: TOTAL_TRANSACTIONS_QUERY_KEY,
+      });
       onConfirmed();
     } finally {
       setPhase("idle");
@@ -94,6 +98,7 @@ export function ClaimTokensButton({
     disabled,
     invalidateReads,
     onConfirmed,
+    queryClient,
     sendCallsAsync,
     status,
     supportsAtomicBatch,
