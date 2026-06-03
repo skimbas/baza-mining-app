@@ -19,26 +19,38 @@ export function AddAppPrompt() {
       setVisible(false);
     };
 
-    sdk.on("miniAppAdded", onAdded);
+    try {
+      sdk.on("miniAppAdded", onAdded);
+    } catch {
+      return;
+    }
 
     void (async () => {
-      if (
-        localStorage.getItem(DISMISS_KEY) === "1" ||
-        localStorage.getItem(ADDED_KEY) === "1"
-      ) {
-        return;
+      try {
+        if (
+          localStorage.getItem(DISMISS_KEY) === "1" ||
+          localStorage.getItem(ADDED_KEY) === "1"
+        ) {
+          return;
+        }
+
+        const inMiniApp = await sdk.isInMiniApp();
+        if (!inMiniApp || cancelled) return;
+
+        await new Promise((resolve) => window.setTimeout(resolve, 900));
+        if (!cancelled) setVisible(true);
+      } catch {
+        // SDK unavailable outside mini app host.
       }
-
-      const inMiniApp = await sdk.isInMiniApp();
-      if (!inMiniApp || cancelled) return;
-
-      await new Promise((resolve) => window.setTimeout(resolve, 900));
-      if (!cancelled) setVisible(true);
     })();
 
     return () => {
       cancelled = true;
-      sdk.off("miniAppAdded", onAdded);
+      try {
+        sdk.off("miniAppAdded", onAdded);
+      } catch {
+        // ignore
+      }
     };
   }, []);
 
