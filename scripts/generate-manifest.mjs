@@ -157,7 +157,7 @@ async function signAccountAssociation({ fid, custodyAddress, domain, privateKey 
 }
 
 async function promptInteractiveConfig() {
-  p.intro("Farcaster manifest — BAZA Mining");
+  p.intro("Farcaster manifest — BAZA");
 
   p.log.info(
     "@farcaster/mini-app-cli is not on npm yet. This wizard signs the manifest locally (JFS + custody key), same result as Warpcast.",
@@ -165,7 +165,7 @@ async function promptInteractiveConfig() {
 
   const name = await p.text({
     message: "App name",
-    initialValue: "BAZA Mining",
+    initialValue: "BAZA",
     validate: (v) => (v?.trim() ? undefined : "Required"),
   });
   if (p.isCancel(name)) process.exit(0);
@@ -242,7 +242,7 @@ async function main() {
     domain = normalizeDomain(process.env.FARCASTER_DOMAIN || DEFAULT_DOMAIN);
     fidFromEnv = process.env.FARCASTER_FID;
     frame = buildFrameConfig({
-      name: "BAZA Mining",
+      name: "BAZA",
       origin: DEFAULT_ORIGIN,
       iconPath: "logo.png",
     });

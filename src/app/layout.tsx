@@ -30,7 +30,7 @@ const BAZA_TAGLINE =
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "BAZA Mining",
+  title: "BAZA",
   description: BAZA_TAGLINE,
   icons: {
     icon: [
@@ -40,14 +40,14 @@ export const metadata: Metadata = {
     apple: "/logo.png",
   },
   openGraph: {
-    title: "BAZA Mining",
+    title: "BAZA",
     description: BAZA_TAGLINE,
     images: [
       {
         url: "/logo.png",
         width: 256,
         height: 256,
-        alt: "BAZA Mining",
+        alt: "BAZA",
         type: "image/png",
       },
     ],

@@ -1,13 +1,12 @@
-import { NextResponse } from "next/server";
+import { buildFarcasterShareUrl } from "@/lib/share";
+import { NextRequest, NextResponse } from "next/server";
 
-const APP_ORIGIN =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_URL != null
-    ? `https://${process.env.VERCEL_URL}`
-    : "https://baza-mining-app.vercel.app");
+export function GET(request: NextRequest) {
+  const streakParam = request.nextUrl.searchParams.get("streak");
+  const streak =
+    streakParam != null && /^\d+$/.test(streakParam)
+      ? BigInt(streakParam)
+      : undefined;
 
-const WARPCAST_COMPOSE = `https://warpcast.com/~/compose?text=${encodeURIComponent("I'm mining $BAZA on Base! Join me and build your streak:")}&embeds[]=${encodeURIComponent(APP_ORIGIN)}`;
-
-export function GET() {
-  return NextResponse.redirect(WARPCAST_COMPOSE, 302);
+  return NextResponse.redirect(buildFarcasterShareUrl(streak), 302);
 }

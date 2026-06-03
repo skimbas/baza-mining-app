@@ -1,6 +1,7 @@
 "use client";
 
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
+import { ShareBonusButtons } from "@/components/ShareBonusButtons";
 import { StreakVisual } from "@/components/StreakVisual";
 import {
   BAZA_CHAIN,
@@ -139,6 +140,7 @@ export function ConnectWallet() {
     particles,
     registerClick,
     resetClicks,
+    addBonusTaps,
   } = useClicker();
   const txActionRef = useRef<"checkin" | null>(null);
   const [nowSec, setNowSec] = useState(() =>
@@ -542,6 +544,13 @@ export function ConnectWallet() {
           </div>
           <p className="mt-2 text-xs text-slate-500">+2 energy per second</p>
         </div>
+
+        <ShareBonusButtons
+          key={address}
+          address={address}
+          streak={streakBig}
+          onBonusGranted={(_platform, taps) => addBonusTaps(taps)}
+        />
 
         <button
           type="button"

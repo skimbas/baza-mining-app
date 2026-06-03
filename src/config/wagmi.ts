@@ -17,7 +17,7 @@ export function getConfig() {
   return createConfig({
     chains: [base],
     connectors: [
-      baseAccount({ appName: "BAZA Mining" }),
+      baseAccount({ appName: "BAZA" }),
       injected({ target: "metaMask" }),
     ],
     ssr: true,

@@ -6,7 +6,7 @@
   },
   "frame": {
     "version": "1",
-    "name": "BAZA Mining",
+    "name": "BAZA",
     "iconUrl": "https://baza-mining-app.vercel.app/logo.png",
     "homeUrl": "https://baza-mining-app.vercel.app",
     "imageUrl": "https://baza-mining-app.vercel.app/logo.png",
@@ -19,8 +19,8 @@
     "primaryCategory": "games",
     "tags": ["mining", "base", "rewards"],
     "tagline": "Build your streak, mine BAZA.",
-    "ogTitle": "BAZA Mining Onchain",
-    "ogDescription": "Join the BAZA Mining community on Base. Build daily streaks and earn rewards.",
+    "ogTitle": "BAZA Onchain",
+    "ogDescription": "Join the BAZA community on Base. Build daily streaks and earn rewards.",
     "ogImageUrl": "https://baza-mining-app.vercel.app/logo.png",
     "castShareUrl": "https://baza-mining-app.vercel.app/api/share"
   }
