@@ -1,67 +1,100 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type SharePlatform = "farcaster" | "twitter";
 
 export const SHARE_BONUS_TAPS = 3;
+export const SHARE_BONUS_COOLDOWN_MS = 60 * 60 * 1000;
 
 const STORAGE_PREFIX = "baza-share-bonus:";
 
-type ShareBonusState = Record<SharePlatform, boolean>;
-
-const EMPTY_STATE: ShareBonusState = {
-  farcaster: false,
-  twitter: false,
-};
+type ShareBonusTimestamps = Partial<Record<SharePlatform, number>>;
 
 function storageKey(address: string) {
   return `${STORAGE_PREFIX}${address.toLowerCase()}`;
 }
 
-function readState(address: string | undefined): ShareBonusState {
-  if (typeof window === "undefined" || !address) return EMPTY_STATE;
+function parseStoredState(raw: string | null): ShareBonusTimestamps {
+  if (!raw) return {};
   try {
-    const raw = window.localStorage.getItem(storageKey(address));
-    if (!raw) return EMPTY_STATE;
-    const parsed = JSON.parse(raw) as Partial<ShareBonusState>;
-    return {
-      farcaster: Boolean(parsed.farcaster),
-      twitter: Boolean(parsed.twitter),
-    };
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const state: ShareBonusTimestamps = {};
+
+    for (const platform of ["farcaster", "twitter"] as const) {
+      const value = parsed[platform];
+      if (typeof value === "number" && Number.isFinite(value)) {
+        state[platform] = value;
+      } else if (value === true) {
+        // Migrate one-time boolean claims to timestamp-based cooldown.
+        state[platform] = Date.now();
+      }
+    }
+
+    return state;
   } catch {
-    return EMPTY_STATE;
+    return {};
   }
 }
 
-function writeState(address: string, state: ShareBonusState) {
+function readState(address: string | undefined): ShareBonusTimestamps {
+  if (typeof window === "undefined" || !address) return {};
+  return parseStoredState(window.localStorage.getItem(storageKey(address)));
+}
+
+function writeState(address: string, state: ShareBonusTimestamps) {
   window.localStorage.setItem(storageKey(address), JSON.stringify(state));
 }
 
+function cooldownRemainingMs(
+  platform: SharePlatform,
+  timestamps: ShareBonusTimestamps,
+  now = Date.now(),
+) {
+  const lastClaim = timestamps[platform];
+  if (lastClaim == null) return 0;
+  return Math.max(0, SHARE_BONUS_COOLDOWN_MS - (now - lastClaim));
+}
+
 export function useShareBonus(address: string | undefined) {
-  const [claimed, setClaimed] = useState<ShareBonusState>(() =>
+  const [timestamps, setTimestamps] = useState<ShareBonusTimestamps>(() =>
     readState(address),
   );
+  const [now, setNow] = useState(() => Date.now());
 
-  const isClaimed = useCallback(
-    (platform: SharePlatform) => claimed[platform],
-    [claimed],
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const isOnCooldown = useCallback(
+    (platform: SharePlatform) =>
+      cooldownRemainingMs(platform, timestamps, now) > 0,
+    [timestamps, now],
+  );
+
+  const getCooldownRemainingMs = useCallback(
+    (platform: SharePlatform) =>
+      cooldownRemainingMs(platform, timestamps, now),
+    [timestamps, now],
   );
 
   const claimBonus = useCallback(
     (platform: SharePlatform) => {
-      if (!address || claimed[platform]) return false;
-      const next = { ...claimed, [platform]: true };
+      if (!address || isOnCooldown(platform)) return false;
+      const next = { ...timestamps, [platform]: Date.now() };
       writeState(address, next);
-      setClaimed(next);
+      setTimestamps(next);
       return true;
     },
-    [address, claimed],
+    [address, isOnCooldown, timestamps],
   );
 
   return {
     shareBonusTaps: SHARE_BONUS_TAPS,
-    isClaimed,
+    shareBonusCooldownMs: SHARE_BONUS_COOLDOWN_MS,
+    isOnCooldown,
+    getCooldownRemainingMs,
     claimBonus,
   };
 }
