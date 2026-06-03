@@ -1,4 +1,4 @@
-import { createPublicClient, fallback, http, type PublicClient } from "viem";
+import { createPublicClient, fallback, http } from "viem";
 import { base } from "viem/chains";
 
 const PUBLIC_BASE_RPC = "https://mainnet.base.org";
@@ -31,7 +31,7 @@ export function getBaseRpcUrl() {
 }
 
 /** Public client with automatic RPC fallback for server-side reads. */
-export function createBasePublicClient(): PublicClient {
+export function createBasePublicClient() {
   return createPublicClient({
     chain: base,
     transport: fallback(

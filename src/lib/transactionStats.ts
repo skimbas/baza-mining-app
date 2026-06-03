@@ -1,4 +1,5 @@
 import { BAZA_TOKEN_ABI, BAZA_TOKEN_ADDRESS } from "@/config/contracts";
+import { baselineTotals, TX_STATS_BASELINE } from "@/data/txStatsBaseline";
 import { createBasePublicClient } from "@/config/rpc";
 import { encodeEventTopics, type Hash } from "viem";
 
@@ -6,8 +7,9 @@ import { encodeEventTopics, type Hash } from "viem";
 export const BAZA_TOKEN_DEPLOY_BLOCK = BigInt(46_494_397);
 
 const LOG_CHUNK_SIZE = BigInt(9999);
-/** Keep low — public Base RPC rate-limits concurrent eth_getLogs. */
 const CHUNK_CONCURRENCY = 3;
+/** Cap incremental scan per request (Vercel Hobby ≈10s limit). */
+const MAX_INCREMENTAL_CHUNKS = 12;
 
 const CHECKED_IN_TOPIC = encodeEventTopics({
   abi: BAZA_TOKEN_ABI,
@@ -51,7 +53,7 @@ function classifyLog(topic: Hash | undefined) {
 
 async function getLogsWithRetry(fromBlock: bigint, toBlock: bigint) {
   let lastError: unknown;
-  for (let attempt = 0; attempt < 4; attempt += 1) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       return await publicClient.getLogs({
         address: BAZA_TOKEN_ADDRESS,
@@ -60,14 +62,20 @@ async function getLogsWithRetry(fromBlock: bigint, toBlock: bigint) {
       });
     } catch (error) {
       lastError = error;
-      await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
+      await new Promise((resolve) => setTimeout(resolve, 300 * 2 ** attempt));
     }
   }
   throw lastError;
 }
 
-async function countEventsInRange(fromBlock: bigint, toBlock: bigint) {
-  const ranges = buildBlockRanges(fromBlock, toBlock);
+async function countEventsInRange(
+  fromBlock: bigint,
+  toBlock: bigint,
+  maxChunks = MAX_INCREMENTAL_CHUNKS,
+) {
+  const allRanges = buildBlockRanges(fromBlock, toBlock);
+  const ranges =
+    maxChunks === Infinity ? allRanges : allRanges.slice(0, maxChunks);
   let checkIns = 0;
   let claims = 0;
 
@@ -96,20 +104,66 @@ export type TransactionStats = {
   checkIns: number;
   claims: number;
   updatedAt: string;
+  stale?: boolean;
 };
 
+export function getBaselineTransactionStats(): TransactionStats {
+  return baselineTotals();
+}
+
 export async function fetchTotalTransactionStats(): Promise<TransactionStats> {
+  const baselineBlock = BigInt(TX_STATS_BASELINE.lastBlock);
+  const baseline = baselineTotals();
+
+  let latestBlock: bigint;
+  try {
+    latestBlock = await publicClient.getBlockNumber();
+  } catch {
+    return { ...baseline, stale: true };
+  }
+
+  const scanFrom = baselineBlock + BigInt(1);
+  if (scanFrom > latestBlock) {
+    return {
+      ...baseline,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  try {
+    const delta = await countEventsInRange(scanFrom, latestBlock);
+    return {
+      checkIns: baseline.checkIns + delta.checkIns,
+      claims: baseline.claims + delta.claims,
+      total:
+        baseline.checkIns +
+        baseline.claims +
+        delta.checkIns +
+        delta.claims,
+      updatedAt: new Date().toISOString(),
+    };
+  } catch {
+    return { ...baseline, stale: true };
+  }
+}
+
+/** Full rescan from deploy block — used by sync script only. */
+export async function fetchFullTransactionStats(): Promise<
+  TransactionStats & { lastBlock: bigint }
+> {
   const deployBlock = getDeployBlock();
   const latestBlock = await publicClient.getBlockNumber();
   const { checkIns, claims } = await countEventsInRange(
     deployBlock,
     latestBlock,
+    Infinity,
   );
 
   return {
-    total: checkIns + claims,
     checkIns,
     claims,
+    total: checkIns + claims,
     updatedAt: new Date().toISOString(),
+    lastBlock: latestBlock,
   };
 }

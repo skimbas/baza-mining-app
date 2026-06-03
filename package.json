@@ -10,7 +10,8 @@
     "manifest:create": "node scripts/try-farcaster-cli.mjs",
     "manifest:create:local": "node scripts/generate-manifest.mjs --interactive",
     "generate:manifest": "node scripts/generate-manifest.mjs",
-    "check:rpc": "node scripts/check-alchemy-rpc.mjs"
+    "check:rpc": "node scripts/check-alchemy-rpc.mjs",
+    "sync:tx-stats": "npx tsx scripts/sync-tx-stats.mjs"
   },
   "dependencies": {
     "@base-org/account": "^2.5.6",
