@@ -1,16 +1,13 @@
-const DEFAULT_APP_ORIGIN = "https://baza-mining-app.vercel.app";
+import { getSiteUrl, PRODUCTION_SITE_URL } from "@/lib/site";
 
 export function getAppOrigin() {
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.VERCEL_URL != null
-      ? `https://${process.env.VERCEL_URL}`
-      : DEFAULT_APP_ORIGIN)
-  );
+  return getSiteUrl();
 }
+
+export { PRODUCTION_SITE_URL as DEFAULT_APP_ORIGIN };
 
 export function buildShareMessage(streak?: bigint) {
   const streakLine =

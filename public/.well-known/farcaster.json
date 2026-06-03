@@ -9,7 +9,7 @@
     "name": "BAZA",
     "iconUrl": "https://baza-mining-app.vercel.app/logo.png",
     "homeUrl": "https://baza-mining-app.vercel.app",
-    "imageUrl": "https://baza-mining-app.vercel.app/logo.png",
+    "imageUrl": "https://baza-mining-app.vercel.app/thumbnail.png",
     "buttonTitle": "Start Mining",
     "splashImageUrl": "https://baza-mining-app.vercel.app/logo.png",
     "splashBackgroundColor": "#0052FF",
@@ -21,7 +21,7 @@
     "tagline": "Build your streak, mine BAZA.",
     "ogTitle": "BAZA Onchain",
     "ogDescription": "Join the BAZA community on Base. Build daily streaks and earn rewards.",
-    "ogImageUrl": "https://baza-mining-app.vercel.app/logo.png",
+    "ogImageUrl": "https://baza-mining-app.vercel.app/thumbnail.png",
     "castShareUrl": "https://baza-mining-app.vercel.app/api/share"
   }
 }

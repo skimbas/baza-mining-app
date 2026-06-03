@@ -5,14 +5,12 @@ import { cookieToInitialState } from "wagmi";
 
 import { getConfig } from "@/config/wagmi";
 
+import { getSiteUrl } from "@/lib/site";
+
 import { ProvidersShell } from "./providers-loader";
 import "./globals.css";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_URL != null
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000");
+const siteUrl = getSiteUrl();
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,15 +40,24 @@ export const metadata: Metadata = {
   openGraph: {
     title: "BAZA",
     description: BAZA_TAGLINE,
+    url: siteUrl,
+    siteName: "BAZA",
+    type: "website",
     images: [
       {
-        url: "/logo.png",
-        width: 256,
-        height: 256,
+        url: "/thumbnail.png",
+        width: 1910,
+        height: 1000,
         alt: "BAZA",
         type: "image/png",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BAZA",
+    description: BAZA_TAGLINE,
+    images: ["/thumbnail.png"],
   },
   other: {
     "base:app_id": "69861ce98dcaa0daf5755fcc",

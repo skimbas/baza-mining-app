@@ -12,6 +12,10 @@ import {
 } from "wagmi";
 
 import {
+  BAZA_BUILDER_DATA_SUFFIX,
+  BAZA_BUILDER_SEND_CALLS_CAPABILITIES,
+} from "@/config/builderCode";
+import {
   BAZA_TOKEN_ABI,
   BAZA_TOKEN_ADDRESS,
 } from "@/config/contracts";
@@ -63,6 +67,7 @@ export function ClaimTokensButton({
               args: [amount],
             },
           ],
+          capabilities: BAZA_BUILDER_SEND_CALLS_CAPABILITIES,
         });
         await waitForCallsStatus(config, { id });
       } else {
@@ -72,6 +77,7 @@ export function ClaimTokensButton({
           abi: BAZA_TOKEN_ABI,
           functionName: "claimTokens",
           args: [amount],
+          dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
         });
         await waitForTransactionReceipt(config, { hash });
       }

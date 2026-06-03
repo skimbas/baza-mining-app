@@ -34,6 +34,6 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "viem": "^2.49.3"
+    "viem": "^2.52.0"
   }
 }

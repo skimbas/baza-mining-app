@@ -1,4 +1,7 @@
 import {
+  BAZA_BUILDER_DATA_SUFFIX,
+} from "@/config/builderCode";
+import {
   cookieStorage,
   createConfig,
   createStorage,
@@ -27,6 +30,7 @@ export function getConfig() {
     transports: {
       [base.id]: http(BASE_MAINNET_RPC),
     },
+    dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
   });
 }
 

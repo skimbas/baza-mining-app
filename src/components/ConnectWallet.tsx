@@ -3,11 +3,13 @@
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
 import { ShareBonusButtons } from "@/components/ShareBonusButtons";
 import { StreakVisual } from "@/components/StreakVisual";
+import { WrongNetworkPrompt } from "@/components/WrongNetworkPrompt";
 import {
   BAZA_CHAIN,
   BAZA_TOKEN_ABI,
   BAZA_TOKEN_ADDRESS,
 } from "@/config/contracts";
+import { BAZA_BUILDER_DATA_SUFFIX } from "@/config/builderCode";
 import { useClicker } from "@/hooks/useClicker";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
@@ -282,6 +284,7 @@ export function ConnectWallet() {
       address: BAZA_TOKEN_ADDRESS,
       abi: BAZA_TOKEN_ABI,
       functionName: "dailyCheckIn",
+      dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
     });
   };
 
@@ -341,6 +344,13 @@ export function ConnectWallet() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-6 text-slate-100">
+      <WrongNetworkPrompt
+        key={isCorrectNetwork ? "network-ok" : "network-wrong"}
+        open={Boolean(address && !isCorrectNetwork)}
+        isSwitching={isSwitchingChain}
+        onSwitch={() => switchChain({ chainId: BAZA_CHAIN.id })}
+      />
+
       <div className="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900/80 px-8 py-8 shadow-[0_0_60px_rgba(59,130,246,0.15)] backdrop-blur sm:px-10 sm:py-9">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-300">
           <span>{shortenAddress(address)}</span>
@@ -364,17 +374,6 @@ export function ConnectWallet() {
             </button>
           </div>
         </div>
-
-        {!isCorrectNetwork ? (
-          <button
-            type="button"
-            onClick={() => switchChain({ chainId: BAZA_CHAIN.id })}
-            disabled={isSwitchingChain}
-            className="mb-4 w-full rounded-xl bg-orange-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:bg-slate-600"
-          >
-            {isSwitchingChain ? "Switching..." : `Switch to ${BAZA_CHAIN.name}`}
-          </button>
-        ) : null}
 
         {streakBrokenUi ? (
           <div
