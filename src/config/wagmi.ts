@@ -1,6 +1,7 @@
 import {
   BAZA_BUILDER_DATA_SUFFIX,
 } from "@/config/builderCode";
+import { getBaseRpcUrl } from "@/config/rpc";
 import {
   cookieStorage,
   createConfig,
@@ -10,7 +11,7 @@ import {
 import { base } from "wagmi/chains";
 import { baseAccount, injected } from "wagmi/connectors";
 
-const BASE_MAINNET_RPC = "https://mainnet.base.org";
+const BASE_MAINNET_RPC = getBaseRpcUrl();
 
 /**
  * Wagmi config for Next.js App Router (SSR + cookie persistence).

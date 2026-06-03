@@ -9,7 +9,8 @@
     "lint": "eslint",
     "manifest:create": "node scripts/try-farcaster-cli.mjs",
     "manifest:create:local": "node scripts/generate-manifest.mjs --interactive",
-    "generate:manifest": "node scripts/generate-manifest.mjs"
+    "generate:manifest": "node scripts/generate-manifest.mjs",
+    "check:rpc": "node scripts/check-alchemy-rpc.mjs"
   },
   "dependencies": {
     "@base-org/account": "^2.5.6",

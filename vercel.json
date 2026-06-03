@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/stats/transactions",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

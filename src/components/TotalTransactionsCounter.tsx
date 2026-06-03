@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useSyncExternalStore } from "react";
 
 type TransactionStatsResponse = {
   total: number;
@@ -9,12 +10,31 @@ type TransactionStatsResponse = {
   updatedAt: string;
 };
 
+const STORAGE_KEY = "baza-tx-stats-cache";
+
+function readCachedStats(): TransactionStatsResponse | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return undefined;
+    return JSON.parse(raw) as TransactionStatsResponse;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeCachedStats(stats: TransactionStatsResponse) {
+  window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+}
+
 async function fetchTransactionStats(): Promise<TransactionStatsResponse> {
   const response = await fetch("/api/stats/transactions");
   if (!response.ok) {
     throw new Error("Failed to load transaction stats");
   }
-  return response.json() as Promise<TransactionStatsResponse>;
+  const stats = (await response.json()) as TransactionStatsResponse;
+  writeCachedStats(stats);
+  return stats;
 }
 
 type TotalTransactionsCounterProps = {
@@ -24,18 +44,31 @@ type TotalTransactionsCounterProps = {
 export function TotalTransactionsCounter({
   className = "",
 }: TotalTransactionsCounterProps) {
-  const { data, isLoading, isError } = useQuery({
+  const cachedStats = useSyncExternalStore(
+    () => () => undefined,
+    readCachedStats,
+    () => undefined,
+  );
+
+  const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ["total-transactions"],
     queryFn: fetchTransactionStats,
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    placeholderData: cachedStats,
+    refetchInterval: 120_000,
+    staleTime: 90_000,
+    retry: 2,
+    retryDelay: 3_000,
   });
 
-  const label = isLoading
-    ? "…"
-    : isError || data == null
-      ? "—"
-      : data.total.toLocaleString("en-US");
+  const display = data ?? cachedStats;
+  const label =
+    display != null
+      ? display.total.toLocaleString("en-US")
+      : isError
+        ? "—"
+        : isLoading
+          ? "…"
+          : "—";
 
   return (
     <div
@@ -49,7 +82,9 @@ export function TotalTransactionsCounter({
       <p className="mt-0.5 text-lg font-semibold tabular-nums text-blue-200">
         {label}
       </p>
-      <p className="mt-0.5 text-[11px] text-slate-500">All BAZA players</p>
+      <p className="mt-0.5 text-[11px] text-slate-500">
+        All BAZA players{isFetching && display ? " · updating" : ""}
+      </p>
     </div>
   );
 }
