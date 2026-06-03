@@ -8,10 +8,6 @@ import { WagmiProvider } from "wagmi";
 
 import { getConfig } from "@/config/wagmi";
 
-if (typeof window !== "undefined") {
-  void sdk.actions.ready().catch(() => undefined);
-}
-
 type ProvidersProps = {
   children: ReactNode;
   initialState?: State | undefined;
