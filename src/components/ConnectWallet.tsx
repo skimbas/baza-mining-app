@@ -15,7 +15,7 @@ import { useFarcasterAutoConnect } from "@/hooks/useFarcasterAutoConnect";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   useChainId,
   useConnect,
@@ -113,7 +113,7 @@ export function ConnectWallet() {
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
   const { inMiniApp, isBootstrapping } = useFarcasterAutoConnect();
-  const { disconnect } = useDisconnect();
+  const { disconnectAsync, isPending: isDisconnectPending } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { writeContractAsync, data: txHash, isPending: isWritePending, reset: resetWriteContract } =
     useWriteContract();
@@ -289,16 +289,31 @@ export function ConnectWallet() {
     })();
   };
 
-  const visibleConnectors =
-    inMiniApp === true
-      ? connectors.filter((item) => item.id === "farcaster")
-      : connectors;
+  const visibleConnectors = useMemo(() => {
+    if (inMiniApp === true) {
+      return connectors.filter((item) => item.id === "farcaster");
+    }
+    if (inMiniApp === false) {
+      return connectors.filter((item) => item.id !== "farcaster");
+    }
+    return connectors.filter((item) => item.id !== "farcaster");
+  }, [connectors, inMiniApp]);
 
-  if (!mounted || isBootstrapping) {
+  const [connectingConnectorUid, setConnectingConnectorUid] = useState<
+    string | null
+  >(null);
+  const isWalletBusy =
+    isReconnecting || isConnecting || isConnectPending || isDisconnectPending;
+
+  const handleDisconnect = () => {
+    void disconnectAsync();
+  };
+
+  if (!mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-slate-100">
         <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-sm">
-          {isBootstrapping ? "Connecting Farcaster wallet…" : "Loading wallet..."}
+          Loading wallet…
         </div>
       </div>
     );
@@ -313,6 +328,18 @@ export function ConnectWallet() {
           ? "Choose how to connect"
           : "Connect wallet to start mining BAZA";
 
+    if (isBootstrapping || (inMiniApp === null && isWalletBusy)) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-slate-100">
+          <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-sm">
+            {inMiniApp === null
+              ? "Loading wallet…"
+              : "Connecting Farcaster wallet…"}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
         <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900/70 p-6 shadow-xl shadow-blue-500/10">
@@ -325,23 +352,29 @@ export function ConnectWallet() {
           </p>
           <p className="mb-4 text-center text-sm text-slate-300">{statusLine}</p>
           <div className="flex flex-col gap-3">
-            {visibleConnectors.map((connector) => (
+            {visibleConnectors.map((connectorItem) => {
+              const isThisPending =
+                connectingConnectorUid === connectorItem.uid && isConnectPending;
+              return (
               <button
-                key={connector.uid}
+                key={connectorItem.uid}
                 type="button"
-                disabled={
-                  isConnectPending ||
-                  isConnecting ||
-                  isReconnecting
-                }
-                onClick={() => connect({ connector })}
+                disabled={isWalletBusy}
+                onClick={() => {
+                  setConnectingConnectorUid(connectorItem.uid);
+                  connect(
+                    { connector: connectorItem, chainId: BAZA_CHAIN.id },
+                    { onSettled: () => setConnectingConnectorUid(null) },
+                  );
+                }}
                 className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-600"
               >
-                {isConnectPending || isConnecting
+                {isThisPending
                   ? "Connecting…"
-                  : `Connect with ${connectorLabel(connector.id, connector.name)}`}
+                  : `Connect with ${connectorLabel(connectorItem.id, connectorItem.name)}`}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -373,10 +406,11 @@ export function ConnectWallet() {
             ) : null}
             <button
               type="button"
-              onClick={() => disconnect()}
-              className="rounded-lg border border-slate-700 px-3 py-1.5 transition hover:border-slate-500"
+              onClick={handleDisconnect}
+              disabled={isDisconnectPending}
+              className="rounded-lg border border-slate-700 px-3 py-1.5 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Disconnect
+              {isDisconnectPending ? "Disconnecting…" : "Disconnect"}
             </button>
           </div>
         </div>

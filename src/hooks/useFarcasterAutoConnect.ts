@@ -1,64 +1,92 @@
 "use client";
 
 import sdk from "@farcaster/frame-sdk";
-import { useEffect, useState } from "react";
-import { useConnect, useConnection, useDisconnect } from "wagmi";
-
-import { BAZA_CHAIN } from "@/config/contracts";
+import { useEffect, useRef, useState } from "react";
+import { useConfig, useConnect, useConnection, useDisconnect } from "wagmi";
+import { reconnect } from "wagmi/actions";
 
 const FARCASTER_CONNECTOR_ID = "farcaster";
 
+type BootstrapPhase =
+  | "idle"
+  | "detecting"
+  | "disconnect-wrong"
+  | "reconnect"
+  | "done";
+
 /**
- * In Warpcast, connect via the Farcaster mini app wallet instead of Base Account.
- * Waits for `sdk.actions.ready()` so the host wallet is available before txs.
+ * Bootstraps the Farcaster mini app wallet once per session.
+ * Avoids reconnect loops with Base Account cookies from SSR.
  */
 export function useFarcasterAutoConnect() {
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { connector, isConnected, isReconnecting } = useConnection();
+  const config = useConfig();
+  const { connectors } = useConnect();
+  const { disconnectAsync } = useDisconnect();
+  const { connector, isConnected, status } = useConnection();
   const [inMiniApp, setInMiniApp] = useState<boolean | null>(null);
   const [walletReady, setWalletReady] = useState(false);
+  const phaseRef = useRef<BootstrapPhase>("idle");
 
   useEffect(() => {
+    if (phaseRef.current === "done") return;
+
     let cancelled = false;
+
+    const finish = () => {
+      if (cancelled) return;
+      phaseRef.current = "done";
+      setWalletReady(true);
+    };
 
     void (async () => {
       try {
-        await sdk.actions.ready();
-        const mini = await sdk.isInMiniApp();
-        if (cancelled) return;
-
-        setInMiniApp(mini);
-        if (!mini) {
-          setWalletReady(true);
-          return;
+        if (phaseRef.current === "idle") {
+          phaseRef.current = "detecting";
+          await sdk.actions.ready();
+          const mini = await sdk.isInMiniApp();
+          if (cancelled) return;
+          setInMiniApp(mini);
+          if (!mini) {
+            finish();
+            return;
+          }
         }
 
-        if (isReconnecting) return;
+        if (status === "connecting" || status === "reconnecting") {
+          return;
+        }
 
         const farcasterConnector = connectors.find(
           (item) => item.id === FARCASTER_CONNECTOR_ID,
         );
         if (!farcasterConnector) {
-          setWalletReady(true);
+          finish();
+          return;
+        }
+
+        if (isConnected && connector?.id === FARCASTER_CONNECTOR_ID) {
+          finish();
           return;
         }
 
         if (isConnected && connector?.id !== FARCASTER_CONNECTOR_ID) {
-          disconnect();
+          if (phaseRef.current !== "disconnect-wrong") {
+            phaseRef.current = "disconnect-wrong";
+            await disconnectAsync();
+          }
           return;
         }
 
-        if (!isConnected) {
-          await connect({
-            connector: farcasterConnector,
-            chainId: BAZA_CHAIN.id,
-          });
+        if (phaseRef.current === "reconnect") {
+          finish();
+          return;
         }
+
+        phaseRef.current = "reconnect";
+        await reconnect(config, { connectors: [farcasterConnector] });
+        finish();
       } catch {
-        // User can still connect manually from the connect screen.
-      } finally {
-        if (!cancelled) setWalletReady(true);
+        finish();
       }
     })();
 
@@ -66,16 +94,15 @@ export function useFarcasterAutoConnect() {
       cancelled = true;
     };
   }, [
-    connect,
+    config,
     connector?.id,
     connectors,
-    disconnect,
+    disconnectAsync,
     isConnected,
-    isReconnecting,
+    status,
   ]);
 
-  const isBootstrapping =
-    inMiniApp === true && (!walletReady || isReconnecting);
+  const isBootstrapping = inMiniApp === null || (inMiniApp && !walletReady);
 
   return { inMiniApp, isBootstrapping, walletReady };
 }

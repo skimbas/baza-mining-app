@@ -10,6 +10,6 @@ export function farcasterMiniApp() {
       name: "Farcaster",
       provider: sdk.wallet.ethProvider as EIP1193Provider,
     },
-    shimDisconnect: false,
+    shimDisconnect: true,
   });
 }
