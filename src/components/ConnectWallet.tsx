@@ -415,14 +415,16 @@ export function ConnectWallet() {
           </div>
         ) : null}
 
-        <div className={`mb-2 grid grid-cols-2 gap-2 p-2.5 text-xs sm:text-sm ${theme.statsClass}`}>
-          <p>🔥 Streak: {streakLabel}</p>
+        <div
+          className={`mb-2 flex flex-nowrap items-center justify-between gap-2 px-2.5 py-1.5 text-xs sm:text-sm ${theme.statsClass}`}
+        >
+          <p className="shrink-0 whitespace-nowrap">🔥 Streak: {streakLabel}</p>
           <p
-            className="max-w-[55%] justify-self-end text-right font-mono text-xs leading-snug sm:text-sm"
+            className="min-w-0 truncate text-right font-mono whitespace-nowrap"
             title={`${balanceExact} $BAZA`}
           >
-            <span className="block text-slate-400">💰 Total $BAZA</span>
-            <span className="break-all text-slate-100">{balanceCompact}</span>
+            <span className="text-slate-400">💰 Total $BAZA </span>
+            <span className="text-slate-100">{balanceCompact}</span>
           </p>
         </div>
 
@@ -555,43 +557,47 @@ export function ConnectWallet() {
           <p className="mt-1 text-[10px] text-slate-500">+2 energy per second</p>
         </div>
 
+        <div className="mb-2">
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={handleDailyCheckIn}
+              disabled={
+                isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
+              }
+              title="Daily Check-in"
+              className={`min-w-0 px-2 py-2 text-[11px] font-medium transition disabled:cursor-not-allowed sm:px-3 sm:text-xs ${theme.checkInClass}`}
+            >
+              {isCheckInPending ? "Pending…" : "Check-in"}
+            </button>
+
+            <ClaimTokensButton
+              amount={BigInt(unclaimedBz)}
+              disabled={!canClaim}
+              supportsAtomicBatch={supportsAtomicBatch}
+              highlight={unclaimedBz >= requiredTapsForClaim}
+              theme={theme}
+              compact
+              onConfirmed={() => resetClicks()}
+            />
+          </div>
+
+          {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
+            <p className="mt-1.5 text-center text-[10px] text-slate-400 sm:text-xs">
+              Next check-in in{" "}
+              <span className="font-mono text-slate-200">
+                {formatCountdownSeconds(cooldownRemaining)}
+              </span>
+            </p>
+          ) : null}
+        </div>
+
         <ShareBonusButtons
           key={address}
           address={address}
           streak={streakBig}
           theme={theme}
           onBonusGranted={(_platform, taps) => addBonusTaps(taps)}
-        />
-
-        <button
-          type="button"
-          onClick={handleDailyCheckIn}
-          disabled={
-            isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
-          }
-          className={`mb-1.5 w-full px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed sm:text-sm ${theme.checkInClass}`}
-        >
-          {isCheckInPending ? "Transaction Pending..." : "Daily Check-in"}
-        </button>
-
-        {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
-          <p className="mb-2 text-center text-[10px] text-slate-400 sm:text-xs">
-            Next check-in in{" "}
-            <span className="font-mono text-slate-200">
-              {formatCountdownSeconds(cooldownRemaining)}
-            </span>
-          </p>
-        ) : (
-          <div className="mb-2 h-3" aria-hidden />
-        )}
-
-        <ClaimTokensButton
-          amount={BigInt(unclaimedBz)}
-          disabled={!canClaim}
-          supportsAtomicBatch={supportsAtomicBatch}
-          highlight={unclaimedBz >= requiredTapsForClaim}
-          theme={theme}
-          onConfirmed={() => resetClicks()}
         />
       </div>
     </main>

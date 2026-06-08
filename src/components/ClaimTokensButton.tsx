@@ -30,6 +30,8 @@ type ClaimTokensButtonProps = {
   /** Visual variant (glow when many unclaimed clicks). */
   highlight: boolean;
   theme: UiTheme;
+  compact?: boolean;
+  className?: string;
   onConfirmed: () => void;
 };
 
@@ -39,6 +41,8 @@ export function ClaimTokensButton({
   supportsAtomicBatch,
   highlight,
   theme,
+  compact = false,
+  className,
   onConfirmed,
 }: ClaimTokensButtonProps) {
   const config = useConfig();
@@ -119,24 +123,35 @@ export function ClaimTokensButton({
   const isPending =
     isSendCallsPending || isWritePending || phase !== "idle";
 
+  const pendingLabel =
+    phase === "batch"
+      ? compact
+        ? "Batch…"
+        : "Confirm batch…"
+      : compact
+        ? "Pending…"
+        : "Transaction pending…";
+
   return (
     <button
       type="button"
       onClick={() => void handleClick()}
       disabled={disabled || isPending}
-      className={`w-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm ${
+      className={`w-full min-w-0 px-2 py-2 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 sm:px-3 sm:text-xs ${
         highlight ? theme.claimHighlightClass : theme.claimClass
-      }`}
+      } ${className ?? ""}`}
     >
       {isPending ? (
-        <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center justify-center gap-1.5">
           <motion.span
-            className="h-4 w-4 rounded-full border-2 border-white/50 border-t-white"
+            className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-white/50 border-t-white sm:h-4 sm:w-4"
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
           />
-          {phase === "batch" ? "Confirm batch…" : "Transaction pending…"}
+          {pendingLabel}
         </span>
+      ) : compact ? (
+        "Claim"
       ) : (
         "Claim to wallet"
       )}
