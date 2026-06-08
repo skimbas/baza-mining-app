@@ -19,6 +19,8 @@ import {
   BAZA_TOKEN_ABI,
   BAZA_TOKEN_ADDRESS,
 } from "@/config/contracts";
+import type { UiTheme } from "@/config/uiThemes";
+
 type ClaimTokensButtonProps = {
   /** Whole $BAZA units to mint (matches `claimTokens(uint256 amount)`). */
   amount: bigint;
@@ -27,6 +29,7 @@ type ClaimTokensButtonProps = {
   supportsAtomicBatch: boolean;
   /** Visual variant (glow when many unclaimed clicks). */
   highlight: boolean;
+  theme: UiTheme;
   onConfirmed: () => void;
 };
 
@@ -35,6 +38,7 @@ export function ClaimTokensButton({
   disabled,
   supportsAtomicBatch,
   highlight,
+  theme,
   onConfirmed,
 }: ClaimTokensButtonProps) {
   const config = useConfig();
@@ -120,11 +124,9 @@ export function ClaimTokensButton({
       type="button"
       onClick={() => void handleClick()}
       disabled={disabled || isPending}
-      className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition ${
-        highlight
-          ? "bg-blue-500 shadow-[0_0_30px_rgba(56,189,248,0.6)] hover:bg-blue-400"
-          : "bg-slate-700"
-      } disabled:cursor-not-allowed disabled:opacity-70`}
+      className={`w-full px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${
+        highlight ? theme.claimHighlightClass : theme.claimClass
+      }`}
     >
       {isPending ? (
         <span className="inline-flex items-center gap-2">

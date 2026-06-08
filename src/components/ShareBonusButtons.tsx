@@ -8,11 +8,13 @@ import {
   type SharePlatform,
   useShareBonus,
 } from "@/hooks/useShareBonus";
+import type { UiTheme } from "@/config/uiThemes";
 import { useState } from "react";
 
 type ShareBonusButtonsProps = {
   address: string;
   streak: bigint;
+  theme: UiTheme;
   onBonusGranted: (platform: SharePlatform, taps: number) => void;
 };
 
@@ -30,6 +32,7 @@ function formatCooldown(ms: number) {
 export function ShareBonusButtons({
   address,
   streak,
+  theme,
   onBonusGranted,
 }: ShareBonusButtonsProps) {
   const {
@@ -71,7 +74,7 @@ export function ShareBonusButtons({
   const twitterCooldown = isOnCooldown("twitter");
 
   return (
-    <div className="mb-4 rounded-2xl border border-slate-700/80 bg-slate-950/50 p-4">
+    <div className={`mb-4 p-4 ${theme.shareBoxClass}`}>
       <div className="mb-3 text-center">
         <p className="text-sm font-semibold text-slate-100">
           Share &amp; get bonus
@@ -86,7 +89,7 @@ export function ShareBonusButtons({
           type="button"
           onClick={() => handleShare("farcaster")}
           disabled={farcasterCooldown}
-          className="rounded-xl border border-violet-500/40 bg-violet-950/40 px-3 py-2.5 text-sm font-medium text-violet-100 transition hover:border-violet-400/60 hover:bg-violet-900/50 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/60 disabled:text-slate-500"
+          className={`px-3 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/60 disabled:text-slate-500 ${theme.shareFarcasterClass}`}
         >
           {renderButtonLabel("farcaster", "Share on Farcaster")}
         </button>
@@ -95,7 +98,7 @@ export function ShareBonusButtons({
           type="button"
           onClick={() => handleShare("twitter")}
           disabled={twitterCooldown}
-          className="rounded-xl border border-sky-500/40 bg-sky-950/40 px-3 py-2.5 text-sm font-medium text-sky-100 transition hover:border-sky-400/60 hover:bg-sky-900/50 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/60 disabled:text-slate-500"
+          className={`px-3 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/60 disabled:text-slate-500 ${theme.shareTwitterClass}`}
         >
           {renderButtonLabel("twitter", "Share on X")}
         </button>

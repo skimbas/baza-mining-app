@@ -3,6 +3,7 @@
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
 import { ShareBonusButtons } from "@/components/ShareBonusButtons";
 import { StreakVisual } from "@/components/StreakVisual";
+import { ThemePicker } from "@/components/ThemePicker";
 import { WrongNetworkPrompt } from "@/components/WrongNetworkPrompt";
 import {
   BAZA_CHAIN,
@@ -12,6 +13,7 @@ import {
 import { BAZA_BUILDER_DATA_SUFFIX } from "@/config/builderCode";
 import { useClicker } from "@/hooks/useClicker";
 import { useFarcasterAutoConnect } from "@/hooks/useFarcasterAutoConnect";
+import { useUiTheme } from "@/hooks/useUiTheme";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
 import { AnimatePresence, motion } from "framer-motion";
@@ -45,31 +47,7 @@ const CHECKIN_COOLDOWN_SEC = BigInt(86400);
 /** Must match `STREAK_GRACE_PERIOD` in contract (48 hours). */
 const STREAK_GRACE_SEC = BigInt(172800);
 
-/** Base brand blue */
-const BASE_BLUE = "#0052FF";
-
-/** Square tap target: outer frame + inner Base-blue tile */
-const SQUARE_SHADOW_REST = [
-  "0 0 0 1px rgba(255,255,255,0.14)",
-  "0 0 0 1px rgba(0,0,0,0.35) inset",
-  "0 18px 36px rgba(0,0,0,0.42)",
-  "0 0 48px rgba(0,82,255,0.28)",
-].join(", ");
-
-const SQUARE_SHADOW_HOVER = [
-  "0 0 0 1px rgba(255,255,255,0.2)",
-  "0 0 0 1px rgba(0,0,0,0.28) inset",
-  "0 22px 44px rgba(0,0,0,0.38)",
-  "0 0 72px rgba(0,82,255,0.55)",
-  "0 0 20px rgba(120,170,255,0.25)",
-].join(", ");
-
-const SQUARE_SHADOW_PRESSED = [
-  "0 0 0 1px rgba(255,255,255,0.1)",
-  "0 0 0 1px rgba(0,0,0,0.45) inset",
-  "0 8px 18px rgba(0,0,0,0.5)",
-  "0 0 28px rgba(0,82,255,0.2)",
-].join(", ");
+/** Square tap target shadows moved to uiThemes.ts */
 
 function shortenAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -112,6 +90,7 @@ export function ConnectWallet() {
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
   const { inMiniApp, isBootstrapping, appHost } = useFarcasterAutoConnect();
+  const { theme, themeId, setThemeId, themes } = useUiTheme();
   const { disconnectAsync, isPending: isDisconnectPending } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { writeContractAsync, data: txHash, isPending: isWritePending, reset: resetWriteContract } =
@@ -222,12 +201,15 @@ export function ConnectWallet() {
     !isCheckInPending;
 
   const coinInteractive = canClick && isCorrectNetwork;
-  const squareShadow =
+  const mineShadow =
     coinPressedLocal && coinInteractive
-      ? SQUARE_SHADOW_PRESSED
+      ? theme.mineShadowPressed
       : coinHover && coinInteractive
-        ? SQUARE_SHADOW_HOVER
-        : SQUARE_SHADOW_REST;
+        ? theme.mineShadowHover
+        : theme.mineShadowRest;
+
+  const mineInnerInset =
+    theme.mineShape === "circle" ? "inset-[3px]" : "inset-4 sm:inset-5";
 
   useEffect(() => {
     if (!txHash || !isTxConfirmed || !txReceipt) return;
@@ -340,8 +322,13 @@ export function ConnectWallet() {
     }
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
-        <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900/70 p-6 shadow-xl shadow-blue-500/10">
+      <div
+        className={`flex min-h-screen items-center justify-center px-4 py-6 ${theme.pageClass}`}
+        style={theme.pageStyle}
+      >
+        <div
+          className={`w-full max-w-md p-6 shadow-xl ${theme.cardClass}`}
+        >
           <p className="mb-1 text-center text-xs font-medium uppercase tracking-wide text-slate-500">
             {status === "reconnecting"
               ? "Reconnecting"
@@ -366,7 +353,7 @@ export function ConnectWallet() {
                     { onSettled: () => setConnectingConnectorUid(null) },
                   );
                 }}
-                className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-600"
+                className={`w-full px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed ${theme.connectButtonClass}`}
               >
                 {isThisPending
                   ? "Connecting…"
@@ -381,7 +368,10 @@ export function ConnectWallet() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-6 text-slate-100">
+    <main
+      className={`flex min-h-screen items-center justify-center px-4 py-6 text-slate-100 ${theme.pageClass}`}
+      style={theme.pageStyle}
+    >
       <WrongNetworkPrompt
         key={isCorrectNetwork ? "network-ok" : "network-wrong"}
         open={Boolean(address && !isCorrectNetwork)}
@@ -389,7 +379,9 @@ export function ConnectWallet() {
         onSwitch={() => switchChain({ chainId: BAZA_CHAIN.id })}
       />
 
-      <div className="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900/80 px-8 py-8 shadow-[0_0_60px_rgba(59,130,246,0.15)] backdrop-blur sm:px-10 sm:py-9">
+      <div className={`w-full max-w-xl px-8 py-8 sm:px-10 sm:py-9 ${theme.cardClass}`}>
+        <ThemePicker themeId={themeId} themes={themes} onChange={setThemeId} />
+
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-300">
           <span>{shortenAddress(address)}</span>
           <div className="flex flex-wrap items-center gap-2">
@@ -407,7 +399,7 @@ export function ConnectWallet() {
               type="button"
               onClick={handleDisconnect}
               disabled={isDisconnectPending}
-              className="rounded-lg border border-slate-700 px-3 py-1.5 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className={`px-3 py-1.5 transition disabled:cursor-not-allowed disabled:opacity-60 ${theme.disconnectClass}`}
             >
               {isDisconnectPending ? "Disconnecting…" : "Disconnect"}
             </button>
@@ -423,7 +415,7 @@ export function ConnectWallet() {
           </div>
         ) : null}
 
-        <div className="mb-5 grid grid-cols-2 gap-3 rounded-2xl border border-slate-700 bg-slate-900/80 p-4 text-sm">
+        <div className={`mb-5 grid grid-cols-2 gap-3 p-4 text-sm ${theme.statsClass}`}>
           <p>🔥 Streak: {streakLabel}</p>
           <p
             className="max-w-[55%] justify-self-end text-right font-mono text-xs leading-snug sm:text-sm"
@@ -436,7 +428,7 @@ export function ConnectWallet() {
 
         <StreakVisual currentStreak={streakBig} />
 
-        <p className="mb-3 text-center text-lg font-semibold text-blue-300">
+        <p className={`mb-3 text-center text-lg font-semibold ${theme.accentTextClass}`}>
           Unclaimed $BAZA: {unclaimedBz}
         </p>
 
@@ -447,9 +439,9 @@ export function ConnectWallet() {
               {tapsTowardClaim}/{requiredTapsForClaim}
             </span>
           </motion.div>
-          <motion.div className="h-3 w-full overflow-hidden rounded-full bg-slate-800">
+          <motion.div className="h-3 w-full overflow-hidden rounded-full bg-slate-800/80">
             <motion.div
-              className="h-full bg-gradient-to-r from-violet-500 to-blue-400"
+              className={`h-full ${theme.progressClass}`}
               animate={{ width: `${claimTapProgressPercent}%` }}
               transition={{ duration: 0.2 }}
             />
@@ -484,13 +476,13 @@ export function ConnectWallet() {
             whileHover={coinInteractive ? { scale: 1.02 } : undefined}
             whileTap={coinInteractive ? { scale: 0.96 } : undefined}
             transition={{ type: "spring", stiffness: 480, damping: 28 }}
-            className="relative z-10 h-56 w-56 cursor-pointer rounded-2xl bg-[#f4f4f5] disabled:cursor-not-allowed disabled:opacity-40"
-            style={{ boxShadow: squareShadow }}
+            className={`relative z-10 h-56 w-56 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${theme.mineOuterClass}`}
+            style={{ boxShadow: mineShadow }}
             aria-label="Tap to mine BAZA"
           >
             <motion.div
-              className="absolute inset-4 flex items-center justify-center rounded-[1.1rem] sm:inset-5"
-              style={{ backgroundColor: BASE_BLUE }}
+              className={`absolute ${mineInnerInset} flex items-center justify-center ${theme.mineInnerClass}`}
+              style={theme.mineInnerStyle}
               animate={{
                 scale: coinPressedLocal && coinInteractive ? 0.96 : 1,
               }}
@@ -505,7 +497,9 @@ export function ConnectWallet() {
                 aria-hidden
               />
               <span
-                className="relative select-none text-[1.65rem] font-black tracking-[0.1em] text-white sm:text-3xl sm:tracking-[0.12em]"
+                className={`relative select-none text-[1.65rem] font-black tracking-[0.1em] sm:text-3xl sm:tracking-[0.12em] ${
+                  theme.id === "neon" ? "text-black" : "text-white"
+                }`}
                 style={{
                   textShadow: [
                     "0 1px 0 rgba(255,255,255,0.25)",
@@ -551,9 +545,9 @@ export function ConnectWallet() {
               {energy}/{maxEnergy}
             </span>
           </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-slate-800">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-slate-800/80">
             <motion.div
-              className="h-full bg-gradient-to-r from-blue-500 to-cyan-400"
+              className={`h-full ${theme.energyClass}`}
               animate={{ width: `${energyPercent}%` }}
               transition={{ duration: 0.3 }}
             />
@@ -565,6 +559,7 @@ export function ConnectWallet() {
           key={address}
           address={address}
           streak={streakBig}
+          theme={theme}
           onBonusGranted={(_platform, taps) => addBonusTaps(taps)}
         />
 
@@ -574,7 +569,7 @@ export function ConnectWallet() {
           disabled={
             isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
           }
-          className="mb-2 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-600"
+          className={`mb-2 w-full px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed ${theme.checkInClass}`}
         >
           {isCheckInPending ? "Transaction Pending..." : "Daily Check-in"}
         </button>
@@ -595,6 +590,7 @@ export function ConnectWallet() {
           disabled={!canClaim}
           supportsAtomicBatch={supportsAtomicBatch}
           highlight={unclaimedBz >= requiredTapsForClaim}
+          theme={theme}
           onConfirmed={() => resetClicks()}
         />
       </div>
