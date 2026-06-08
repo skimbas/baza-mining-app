@@ -111,7 +111,7 @@ export function ConnectWallet() {
     useWalletCapabilities();
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
-  const { inMiniApp, isBootstrapping } = useFarcasterAutoConnect();
+  const { inMiniApp, isBootstrapping, appHost } = useFarcasterAutoConnect();
   const { disconnectAsync, isPending: isDisconnectPending } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
   const { writeContractAsync, data: txHash, isPending: isWritePending, reset: resetWriteContract } =
@@ -289,17 +289,24 @@ export function ConnectWallet() {
   };
 
   const visibleConnectors = useMemo(() => {
-    if (inMiniApp === true) {
-      return connectors.filter((item) => item.id === "farcaster");
-    }
-    return connectors.filter((item) => item.id !== "farcaster");
-  }, [connectors, inMiniApp]);
+    const filtered =
+      inMiniApp === true
+        ? connectors.filter((item) => item.id === "farcaster")
+        : appHost === "base-app"
+          ? connectors.filter((item) => item.id === "baseAccount")
+          : connectors.filter((item) => item.id !== "farcaster");
+
+    const seen = new Set<string>();
+    return filtered.filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, [appHost, connectors, inMiniApp]);
 
   const [connectingConnectorUid, setConnectingConnectorUid] = useState<
     string | null
   >(null);
-  const isWalletBusy =
-    isReconnecting || isConnecting || isConnectPending || isDisconnectPending;
 
   const handleDisconnect = () => {
     void disconnectAsync();
@@ -317,12 +324,10 @@ export function ConnectWallet() {
 
   if (!isConnected || !address) {
     const statusLine = isReconnecting
-      ? "Restoring your session…"
-      : isConnecting || isConnectPending
-        ? "Opening wallet…"
-        : isDisconnected
-          ? "Choose how to connect"
-          : "Connect wallet to start mining BAZA";
+      ? "Restoring your session… (tap a button if this takes too long)"
+      : isDisconnected
+        ? "Choose how to connect"
+        : "Connect wallet to start mining BAZA";
 
     if (isBootstrapping) {
       return (
@@ -353,7 +358,7 @@ export function ConnectWallet() {
               <button
                 key={connectorItem.uid}
                 type="button"
-                disabled={isWalletBusy}
+                disabled={isThisPending}
                 onClick={() => {
                   setConnectingConnectorUid(connectorItem.uid);
                   connect(

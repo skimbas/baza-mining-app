@@ -11,7 +11,6 @@ import {
 } from "@/lib/miniAppHost";
 
 const FARCASTER_CONNECTOR_ID = "farcaster";
-const BASE_ACCOUNT_CONNECTOR_ID = "baseAccount";
 
 type BootstrapPhase =
   | "idle"
@@ -53,18 +52,6 @@ export function useFarcasterAutoConnect() {
           setAppHost(host);
 
           if (!isFarcasterHost(host)) {
-            if (host === "base-app") {
-              if (status === "connecting" || status === "reconnecting") {
-                return;
-              }
-
-              const baseConnector = connectors.find(
-                (item) => item.id === BASE_ACCOUNT_CONNECTOR_ID,
-              );
-              if (baseConnector && !isConnected) {
-                await reconnect(config, { connectors: [baseConnector] });
-              }
-            }
             finish();
             return;
           }
