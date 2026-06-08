@@ -15,7 +15,7 @@ import { useFarcasterAutoConnect } from "@/hooks/useFarcasterAutoConnect";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useChainId,
   useConnect,
@@ -95,11 +95,10 @@ function connectorLabel(connectorId: string, name: string) {
 }
 
 export function ConnectWallet() {
-  const mounted = useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false,
-  );
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const {
     address,
     isConnected,
@@ -293,9 +292,6 @@ export function ConnectWallet() {
     if (inMiniApp === true) {
       return connectors.filter((item) => item.id === "farcaster");
     }
-    if (inMiniApp === false) {
-      return connectors.filter((item) => item.id !== "farcaster");
-    }
     return connectors.filter((item) => item.id !== "farcaster");
   }, [connectors, inMiniApp]);
 
@@ -328,13 +324,11 @@ export function ConnectWallet() {
           ? "Choose how to connect"
           : "Connect wallet to start mining BAZA";
 
-    if (isBootstrapping || (inMiniApp === null && isWalletBusy)) {
+    if (isBootstrapping) {
       return (
         <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-slate-100">
           <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-sm">
-            {inMiniApp === null
-              ? "Loading wallet…"
-              : "Connecting Farcaster wallet…"}
+            Connecting Farcaster wallet…
           </div>
         </div>
       );

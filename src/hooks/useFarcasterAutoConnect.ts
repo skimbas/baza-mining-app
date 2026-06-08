@@ -1,11 +1,17 @@
 "use client";
 
-import sdk from "@farcaster/frame-sdk";
 import { useEffect, useRef, useState } from "react";
 import { useConfig, useConnect, useConnection, useDisconnect } from "wagmi";
 import { reconnect } from "wagmi/actions";
 
+import {
+  detectAppHost,
+  isFarcasterHost,
+  type AppHost,
+} from "@/lib/miniAppHost";
+
 const FARCASTER_CONNECTOR_ID = "farcaster";
+const BASE_ACCOUNT_CONNECTOR_ID = "baseAccount";
 
 type BootstrapPhase =
   | "idle"
@@ -15,15 +21,15 @@ type BootstrapPhase =
   | "done";
 
 /**
- * Bootstraps the Farcaster mini app wallet once per session.
- * Avoids reconnect loops with Base Account cookies from SSR.
+ * Detects mini app host and bootstraps the wallet connector for that host.
+ * Farcaster Warpcast → Farcaster provider. Base App → baseAccount (wagmi reconnect).
  */
 export function useFarcasterAutoConnect() {
   const config = useConfig();
   const { connectors } = useConnect();
   const { disconnectAsync } = useDisconnect();
   const { connector, isConnected, status } = useConnection();
-  const [inMiniApp, setInMiniApp] = useState<boolean | null>(null);
+  const [appHost, setAppHost] = useState<AppHost | null>(null);
   const [walletReady, setWalletReady] = useState(false);
   const phaseRef = useRef<BootstrapPhase>("idle");
 
@@ -42,11 +48,23 @@ export function useFarcasterAutoConnect() {
       try {
         if (phaseRef.current === "idle") {
           phaseRef.current = "detecting";
-          await sdk.actions.ready();
-          const mini = await sdk.isInMiniApp();
+          const host = await detectAppHost();
           if (cancelled) return;
-          setInMiniApp(mini);
-          if (!mini) {
+          setAppHost(host);
+
+          if (!isFarcasterHost(host)) {
+            if (host === "base-app") {
+              if (status === "connecting" || status === "reconnecting") {
+                return;
+              }
+
+              const baseConnector = connectors.find(
+                (item) => item.id === BASE_ACCOUNT_CONNECTOR_ID,
+              );
+              if (baseConnector && !isConnected) {
+                await reconnect(config, { connectors: [baseConnector] });
+              }
+            }
             finish();
             return;
           }
@@ -102,7 +120,13 @@ export function useFarcasterAutoConnect() {
     status,
   ]);
 
-  const isBootstrapping = inMiniApp === null || (inMiniApp && !walletReady);
+  const isFarcasterMiniApp = appHost === "farcaster";
+  const isBootstrapping = isFarcasterMiniApp && !walletReady;
 
-  return { inMiniApp, isBootstrapping, walletReady };
+  return {
+    appHost,
+    inMiniApp: isFarcasterMiniApp,
+    isBootstrapping,
+    walletReady,
+  };
 }
