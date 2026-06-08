@@ -9,18 +9,8 @@ type ThemePickerProps = {
 };
 
 export function ThemePicker({ themeId, themes, onChange }: ThemePickerProps) {
-  const activeTheme = themes.find((item) => item.id === themeId);
-
   return (
-    <div className="mb-2 rounded-xl border border-white/10 bg-black/20 p-2 backdrop-blur-sm">
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-          Choose theme
-        </p>
-        <p className="hidden max-w-[9rem] truncate text-right text-[10px] text-slate-500 sm:block">
-          {activeTheme?.tagline}
-        </p>
-      </div>
+    <div className="mb-2 rounded-xl border border-white/10 bg-black/20 p-1.5 backdrop-blur-sm">
       <div className="grid grid-cols-4 gap-1.5">
         {themes.map((item) => {
           const active = item.id === themeId;

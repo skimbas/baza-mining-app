@@ -380,7 +380,40 @@ export function ConnectWallet() {
       />
 
       <div className={`w-full max-w-md px-4 py-4 sm:max-w-lg sm:px-5 sm:py-5 ${theme.cardClass}`}>
-        <ThemePicker themeId={themeId} themes={themes} onChange={setThemeId} />
+        <div className="mb-2">
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={handleDailyCheckIn}
+              disabled={
+                isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
+              }
+              title="Daily Check-in"
+              className={`min-w-0 px-2 py-2 text-[11px] font-medium transition disabled:cursor-not-allowed sm:px-3 sm:text-xs ${theme.checkInClass}`}
+            >
+              {isCheckInPending ? "Pending…" : "Check-in"}
+            </button>
+
+            <ClaimTokensButton
+              amount={BigInt(unclaimedBz)}
+              disabled={!canClaim}
+              supportsAtomicBatch={supportsAtomicBatch}
+              highlight={unclaimedBz >= requiredTapsForClaim}
+              theme={theme}
+              compact
+              onConfirmed={() => resetClicks()}
+            />
+          </div>
+
+          {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
+            <p className="mt-1.5 text-center text-[10px] text-slate-400 sm:text-xs">
+              Next check-in in{" "}
+              <span className="font-mono text-slate-200">
+                {formatCountdownSeconds(cooldownRemaining)}
+              </span>
+            </p>
+          ) : null}
+        </div>
 
         <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5 text-xs text-slate-300">
           <span>{shortenAddress(address)}</span>
@@ -557,40 +590,7 @@ export function ConnectWallet() {
           <p className="mt-1 text-[10px] text-slate-500">+2 energy per second</p>
         </div>
 
-        <div className="mb-2">
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              type="button"
-              onClick={handleDailyCheckIn}
-              disabled={
-                isCheckInPending || !isCorrectNetwork || !canDailyCheckIn
-              }
-              title="Daily Check-in"
-              className={`min-w-0 px-2 py-2 text-[11px] font-medium transition disabled:cursor-not-allowed sm:px-3 sm:text-xs ${theme.checkInClass}`}
-            >
-              {isCheckInPending ? "Pending…" : "Check-in"}
-            </button>
-
-            <ClaimTokensButton
-              amount={BigInt(unclaimedBz)}
-              disabled={!canClaim}
-              supportsAtomicBatch={supportsAtomicBatch}
-              highlight={unclaimedBz >= requiredTapsForClaim}
-              theme={theme}
-              compact
-              onConfirmed={() => resetClicks()}
-            />
-          </div>
-
-          {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
-            <p className="mt-1.5 text-center text-[10px] text-slate-400 sm:text-xs">
-              Next check-in in{" "}
-              <span className="font-mono text-slate-200">
-                {formatCountdownSeconds(cooldownRemaining)}
-              </span>
-            </p>
-          ) : null}
-        </div>
+        <ThemePicker themeId={themeId} themes={themes} onChange={setThemeId} />
 
         <ShareBonusButtons
           key={address}
