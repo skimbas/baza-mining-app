@@ -74,31 +74,29 @@ export function ShareBonusButtons({
   const twitterCooldown = isOnCooldown("twitter");
 
   return (
-    <div className={`mb-4 p-4 ${theme.shareBoxClass}`}>
-      <div className="mb-3 text-center">
-        <p className="text-sm font-semibold text-slate-100">
-          Share &amp; get bonus
-        </p>
-        <p className="mt-1 text-xs text-slate-400">
-          +{shareBonusTaps} unclaimed $BAZA per network (every 1 hour)
+    <div className={`mb-2 p-2.5 ${theme.shareBoxClass}`}>
+      <div className="mb-2 text-center">
+        <p className="text-xs font-semibold text-slate-100">Share &amp; get bonus</p>
+        <p className="mt-0.5 text-[10px] leading-snug text-slate-400">
+          +{shareBonusTaps} $BAZA per network · 1h cooldown
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-1.5">
         <button
           type="button"
           onClick={() => handleShare("farcaster")}
           disabled={farcasterCooldown}
-          className={`px-3 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/60 disabled:text-slate-500 ${theme.shareFarcasterClass}`}
+          className={`px-2 py-2 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/60 disabled:text-slate-500 ${theme.shareFarcasterClass}`}
         >
-          {renderButtonLabel("farcaster", "Share on Farcaster")}
+          {renderButtonLabel("farcaster", "Farcaster")}
         </button>
 
         <button
           type="button"
           onClick={() => handleShare("twitter")}
           disabled={twitterCooldown}
-          className={`px-3 py-2.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/60 disabled:text-slate-500 ${theme.shareTwitterClass}`}
+          className={`px-2 py-2 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/60 disabled:text-slate-500 ${theme.shareTwitterClass}`}
         >
           {renderButtonLabel("twitter", "Share on X")}
         </button>
@@ -106,7 +104,7 @@ export function ShareBonusButtons({
 
       {toast ? (
         <p
-          className="mt-3 text-center text-sm font-medium text-emerald-300"
+          className="mt-2 text-center text-xs font-medium text-emerald-300"
           role="status"
         >
           {toast}

@@ -26,11 +26,11 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
   const streakZero = currentStreak <= BigInt(0);
 
   return (
-    <div className="mb-5 sm:mb-6">
-      <p className="mb-2 text-center text-xs font-medium uppercase tracking-wide text-slate-400">
+    <div className="mb-2">
+      <p className="mb-1 text-center text-[10px] font-medium uppercase tracking-wide text-slate-400">
         7-day $BAZA streak
       </p>
-      <div className="flex justify-between gap-1 sm:gap-2">
+      <div className="flex justify-between gap-0.5">
         {days.map((day) => {
           const state = cellState(day, currentStreak);
           const isSeventh = day === 7;
@@ -40,7 +40,7 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
           const inviteFirstDay = streakZero && day === 1;
 
           const baseCircle =
-            "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-semibold transition sm:h-12 sm:w-12";
+            "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold transition";
 
           let className = baseCircle;
 
@@ -61,7 +61,7 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
                 " border-amber-400 bg-slate-900/90 text-amber-100 shadow-[0_0_16px_rgba(251,191,36,0.45)] animate-[streak-ring_1.6s_ease-in-out_infinite]";
             } else if (inviteFirstDay) {
               className +=
-                " border-blue-400 bg-slate-900/90 text-blue-100 shadow-[0_0_22px_rgba(59,130,246,0.55)] ring-2 ring-blue-400/50 ring-offset-2 ring-offset-slate-900 animate-[streak-ring_1.3s_ease-in-out_infinite]";
+                " border-blue-400 bg-slate-900/90 text-blue-100 shadow-[0_0_16px_rgba(59,130,246,0.45)] ring-1 ring-blue-400/50 ring-offset-1 ring-offset-slate-900 animate-[streak-ring_1.3s_ease-in-out_infinite]";
             } else {
               className +=
                 " border-blue-500 bg-slate-900/90 text-blue-100 animate-[streak-ring_1.4s_ease-in-out_infinite]";
@@ -85,7 +85,7 @@ export function StreakVisual({ currentStreak }: StreakVisualProps) {
                 {isCompleted && !isSeventh ? (
                   <motion.svg
                     key={`check-${day}-${currentStreak.toString()}`}
-                    className="h-5 w-5 text-white"
+                    className="h-4 w-4 text-white"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"

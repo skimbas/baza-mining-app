@@ -124,7 +124,7 @@ export function ClaimTokensButton({
       type="button"
       onClick={() => void handleClick()}
       disabled={disabled || isPending}
-      className={`w-full px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${
+      className={`w-full px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 sm:text-sm ${
         highlight ? theme.claimHighlightClass : theme.claimClass
       }`}
     >
