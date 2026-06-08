@@ -38,7 +38,7 @@ export const UI_THEMES: Record<UiThemeId, UiTheme> = {
   classic: {
     id: "classic",
     label: "Classic",
-    tagline: "Тёмный slate + квадрат Base",
+    tagline: "Dark slate + Base square",
     swatch: "linear-gradient(135deg, #0f172a 0%, #0052FF 100%)",
     pageClass: "bg-slate-950",
     cardClass:
@@ -77,7 +77,7 @@ export const UI_THEMES: Record<UiThemeId, UiTheme> = {
   aurora: {
     id: "aurora",
     label: "Aurora",
-    tagline: "Фиолетово-синее северное сияние",
+    tagline: "Purple-blue aurora glow",
     swatch: "linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #0052FF 100%)",
     pageClass: "bg-slate-950",
     pageStyle: {
@@ -128,7 +128,7 @@ export const UI_THEMES: Record<UiThemeId, UiTheme> = {
   neon: {
     id: "neon",
     label: "Neon",
-    tagline: "Резкие углы + cyan/magenta glow",
+    tagline: "Sharp edges + cyan/magenta glow",
     swatch: "linear-gradient(135deg, #000000 0%, #06b6d4 50%, #d946ef 100%)",
     pageClass: "bg-black",
     pageStyle: {
@@ -174,7 +174,7 @@ export const UI_THEMES: Record<UiThemeId, UiTheme> = {
   glass: {
     id: "glass",
     label: "Glass",
-    tagline: "Мягкое стекло + pastel mesh",
+    tagline: "Soft glass + pastel mesh",
     swatch: "linear-gradient(135deg, #dbeafe 0%, #c4b5fd 50%, #fbcfe8 100%)",
     pageClass: "bg-slate-950",
     pageStyle: {

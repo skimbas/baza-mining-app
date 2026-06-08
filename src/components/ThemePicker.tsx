@@ -13,7 +13,7 @@ export function ThemePicker({ themeId, themes, onChange }: ThemePickerProps) {
     <div className="mb-5 rounded-2xl border border-white/10 bg-black/20 p-3 backdrop-blur-sm">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-          Design preview
+          Choose theme
         </p>
         <p className="text-[11px] text-slate-500">{themes.find((t) => t.id === themeId)?.tagline}</p>
       </div>

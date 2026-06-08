@@ -411,7 +411,7 @@ export function ConnectWallet() {
             className="mb-4 rounded-xl border border-amber-500/40 bg-amber-950/40 px-4 py-3 text-center text-sm text-amber-100"
             role="status"
           >
-            Твой стрик обнулился, начни новый цикл!
+            Your streak reset — start a new cycle!
           </div>
         ) : null}
 
@@ -576,7 +576,7 @@ export function ConnectWallet() {
 
         {!canDailyCheckIn && isCorrectNetwork && lastCheckInSec > BigInt(0) ? (
           <p className="mb-3 text-center text-xs text-slate-400">
-            Следующий чекин через{" "}
+            Next check-in in{" "}
             <span className="font-mono text-slate-200">
               {formatCountdownSeconds(cooldownRemaining)}
             </span>
