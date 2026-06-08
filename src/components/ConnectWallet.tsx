@@ -484,20 +484,20 @@ export function ConnectWallet() {
             whileHover={coinInteractive ? { scale: 1.02 } : undefined}
             whileTap={coinInteractive ? { scale: 0.96 } : undefined}
             transition={{ type: "spring", stiffness: 480, damping: 28 }}
-            className="relative z-10 h-52 w-52 cursor-pointer overflow-hidden rounded-2xl bg-[#f4f4f5] p-[18%] disabled:cursor-not-allowed disabled:opacity-40"
+            className="relative z-10 h-56 w-56 cursor-pointer rounded-2xl bg-[#f4f4f5] disabled:cursor-not-allowed disabled:opacity-40"
             style={{ boxShadow: squareShadow }}
             aria-label="Tap to mine BAZA"
           >
             <motion.div
-              className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[18%]"
+              className="absolute inset-4 flex items-center justify-center rounded-[1.1rem] sm:inset-5"
               style={{ backgroundColor: BASE_BLUE }}
               animate={{
-                scale: coinPressedLocal && coinInteractive ? 0.94 : 1,
+                scale: coinPressedLocal && coinInteractive ? 0.96 : 1,
               }}
               transition={{ type: "spring", stiffness: 520, damping: 32 }}
             >
               <div
-                className="pointer-events-none absolute inset-0"
+                className="pointer-events-none absolute inset-0 rounded-[inherit]"
                 style={{
                   background:
                     "linear-gradient(145deg, rgba(255,255,255,0.22) 0%, transparent 42%, rgba(0,0,0,0.12) 100%)",
@@ -505,7 +505,7 @@ export function ConnectWallet() {
                 aria-hidden
               />
               <span
-                className="relative text-2xl font-black tracking-[0.18em] text-white sm:text-[1.65rem]"
+                className="relative select-none text-[1.65rem] font-black tracking-[0.1em] text-white sm:text-3xl sm:tracking-[0.12em]"
                 style={{
                   textShadow: [
                     "0 1px 0 rgba(255,255,255,0.25)",
