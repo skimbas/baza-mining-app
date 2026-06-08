@@ -380,6 +380,30 @@ export function ConnectWallet() {
       />
 
       <div className={`w-full max-w-md px-4 py-4 sm:max-w-lg sm:px-5 sm:py-5 ${theme.cardClass}`}>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5 text-xs text-slate-300">
+          <span>{shortenAddress(address)}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {supportsAtomicBatch ? (
+              <span className="rounded-full border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 text-[11px] text-emerald-200">
+                EIP-5792 batch
+              </span>
+            ) : null}
+            {supportsPaymasterService ? (
+              <span className="rounded-full border border-violet-500/40 bg-violet-950/40 px-2 py-0.5 text-[11px] text-violet-200">
+                Paymaster
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleDisconnect}
+              disabled={isDisconnectPending}
+              className={`px-2 py-1 text-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${theme.disconnectClass}`}
+            >
+              {isDisconnectPending ? "Disconnecting…" : "Disconnect"}
+            </button>
+          </div>
+        </div>
+
         <div className="mb-2">
           <div className="grid grid-cols-2 gap-1.5">
             <button
@@ -413,30 +437,6 @@ export function ConnectWallet() {
               </span>
             </p>
           ) : null}
-        </div>
-
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5 text-xs text-slate-300">
-          <span>{shortenAddress(address)}</span>
-          <div className="flex flex-wrap items-center gap-2">
-            {supportsAtomicBatch ? (
-              <span className="rounded-full border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 text-[11px] text-emerald-200">
-                EIP-5792 batch
-              </span>
-            ) : null}
-            {supportsPaymasterService ? (
-              <span className="rounded-full border border-violet-500/40 bg-violet-950/40 px-2 py-0.5 text-[11px] text-violet-200">
-                Paymaster
-              </span>
-            ) : null}
-            <button
-              type="button"
-              onClick={handleDisconnect}
-              disabled={isDisconnectPending}
-              className={`px-2 py-1 text-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${theme.disconnectClass}`}
-            >
-              {isDisconnectPending ? "Disconnecting…" : "Disconnect"}
-            </button>
-          </div>
         </div>
 
         {streakBrokenUi ? (
