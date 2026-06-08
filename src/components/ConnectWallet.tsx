@@ -3,7 +3,6 @@
 import { ClaimTokensButton } from "@/components/ClaimTokensButton";
 import { ShareBonusButtons } from "@/components/ShareBonusButtons";
 import { StreakVisual } from "@/components/StreakVisual";
-import { TotalTransactionsCounter, TOTAL_TRANSACTIONS_QUERY_KEY } from "@/components/TotalTransactionsCounter";
 import { WrongNetworkPrompt } from "@/components/WrongNetworkPrompt";
 import {
   BAZA_CHAIN,
@@ -12,9 +11,9 @@ import {
 } from "@/config/contracts";
 import { BAZA_BUILDER_DATA_SUFFIX } from "@/config/builderCode";
 import { useClicker } from "@/hooks/useClicker";
+import { useFarcasterAutoConnect } from "@/hooks/useFarcasterAutoConnect";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
-import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
@@ -28,7 +27,7 @@ import {
   useWriteContract,
 } from "wagmi";
 
-/** Repeating tile for watermark behind the BAZA coin (white fill; layer uses opacity 0.05). */
+/** Repeating tile for watermark behind the mine button (white fill; layer uses opacity 0.05). */
 const BAZA_WATERMARK_DATA_URI =
   'url("data:image/svg+xml,' +
   encodeURIComponent(
@@ -49,37 +48,27 @@ const STREAK_GRACE_SEC = BigInt(172800);
 /** Base brand blue */
 const BASE_BLUE = "#0052FF";
 
-/** Outer rim: dark outline + bevel highlights + depth + drop + glow */
-const COIN_SHADOW_REST = [
-  "0 0 0 2px rgba(0,12,40,0.95)",
-  "0 0 0 5px rgba(0,0,0,0.32)",
-  "inset 0 7px 18px rgba(255,255,255,0.24)",
-  "inset 0 -10px 22px rgba(0,0,0,0.44)",
-  "inset 0 0 0 1px rgba(255,255,255,0.07)",
-  "0 22px 44px rgba(0,0,0,0.42)",
-  "0 0 50px rgba(0,82,255,0.45)",
+/** Square tap target: outer frame + inner Base-blue tile */
+const SQUARE_SHADOW_REST = [
+  "0 0 0 1px rgba(255,255,255,0.14)",
+  "0 0 0 1px rgba(0,0,0,0.35) inset",
+  "0 18px 36px rgba(0,0,0,0.42)",
+  "0 0 48px rgba(0,82,255,0.28)",
 ].join(", ");
 
-const COIN_SHADOW_HOVER = [
-  "0 0 0 2px rgba(0,12,40,0.95)",
-  "0 0 0 5px rgba(0,0,0,0.28)",
-  "inset 0 8px 20px rgba(255,255,255,0.28)",
-  "inset 0 -10px 22px rgba(0,0,0,0.4)",
-  "inset 0 0 0 1px rgba(255,255,255,0.1)",
-  "0 26px 52px rgba(0,0,0,0.38)",
-  "0 0 68px rgba(0,82,255,0.72)",
-  "0 0 24px rgba(120,170,255,0.35)",
+const SQUARE_SHADOW_HOVER = [
+  "0 0 0 1px rgba(255,255,255,0.2)",
+  "0 0 0 1px rgba(0,0,0,0.28) inset",
+  "0 22px 44px rgba(0,0,0,0.38)",
+  "0 0 72px rgba(0,82,255,0.55)",
+  "0 0 20px rgba(120,170,255,0.25)",
 ].join(", ");
 
-/** Pressed: stronger lower inset, weaker top highlight, tighter drop (inset look) */
-const COIN_SHADOW_PRESSED = [
-  "0 0 0 2px rgba(0,12,40,0.98)",
-  "0 0 0 4px rgba(0,0,0,0.28)",
-  "inset 0 3px 12px rgba(255,255,255,0.1)",
-  "inset 0 -14px 28px rgba(0,0,0,0.58)",
-  "inset 0 0 0 1px rgba(0,0,0,0.28)",
-  "0 10px 22px rgba(0,0,0,0.52)",
-  "0 0 34px rgba(0,82,255,0.28)",
+const SQUARE_SHADOW_PRESSED = [
+  "0 0 0 1px rgba(255,255,255,0.1)",
+  "0 0 0 1px rgba(0,0,0,0.45) inset",
+  "0 8px 18px rgba(0,0,0,0.5)",
+  "0 0 28px rgba(0,82,255,0.2)",
 ].join(", ");
 
 function shortenAddress(address: string) {
@@ -97,6 +86,7 @@ function formatCountdownSeconds(totalSeconds: bigint): string {
 
 function connectorLabel(connectorId: string, name: string) {
   const id = connectorId.toLowerCase();
+  if (id.includes("farcaster")) return "Farcaster Wallet";
   if (id.includes("base") || name.toLowerCase().includes("base"))
     return "Base Smart Wallet";
   if (id.includes("injected") || name.toLowerCase().includes("meta"))
@@ -121,11 +111,11 @@ export function ConnectWallet() {
   const { supportsAtomicBatch, supportsPaymasterService } =
     useWalletCapabilities();
   const chainId = useChainId();
-  const queryClient = useQueryClient();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
+  const { inMiniApp, isBootstrapping } = useFarcasterAutoConnect();
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
-  const { writeContract, data: txHash, isPending: isWritePending } =
+  const { writeContractAsync, data: txHash, isPending: isWritePending, reset: resetWriteContract } =
     useWriteContract();
   const {
     data: txReceipt,
@@ -233,12 +223,12 @@ export function ConnectWallet() {
     !isCheckInPending;
 
   const coinInteractive = canClick && isCorrectNetwork;
-  const coinShadow =
+  const squareShadow =
     coinPressedLocal && coinInteractive
-      ? COIN_SHADOW_PRESSED
+      ? SQUARE_SHADOW_PRESSED
       : coinHover && coinInteractive
-        ? COIN_SHADOW_HOVER
-        : COIN_SHADOW_REST;
+        ? SQUARE_SHADOW_HOVER
+        : SQUARE_SHADOW_REST;
 
   useEffect(() => {
     if (!txHash || !isTxConfirmed || !txReceipt) return;
@@ -271,9 +261,6 @@ export function ConnectWallet() {
         }
       }
 
-      void queryClient.invalidateQueries({
-        queryKey: TOTAL_TRANSACTIONS_QUERY_KEY,
-      });
     })();
   }, [
     txHash,
@@ -282,25 +269,36 @@ export function ConnectWallet() {
     refetchBalance,
     refetchLastCheckIn,
     refetchStreak,
-    queryClient,
   ]);
 
   const handleDailyCheckIn = () => {
     if (isCheckInPending || !isCorrectNetwork || !canDailyCheckIn) return;
     txActionRef.current = "checkin";
-    writeContract({
-      address: BAZA_TOKEN_ADDRESS,
-      abi: BAZA_TOKEN_ABI,
-      functionName: "dailyCheckIn",
-      dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
-    });
+    void (async () => {
+      try {
+        await writeContractAsync({
+          address: BAZA_TOKEN_ADDRESS,
+          abi: BAZA_TOKEN_ABI,
+          functionName: "dailyCheckIn",
+          dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
+        });
+      } catch {
+        txActionRef.current = null;
+        resetWriteContract();
+      }
+    })();
   };
 
-  if (!mounted) {
+  const visibleConnectors =
+    inMiniApp === true
+      ? connectors.filter((item) => item.id === "farcaster")
+      : connectors;
+
+  if (!mounted || isBootstrapping) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-slate-100">
         <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-sm">
-          Loading wallet...
+          {isBootstrapping ? "Connecting Farcaster wallet…" : "Loading wallet..."}
         </div>
       </div>
     );
@@ -326,9 +324,8 @@ export function ConnectWallet() {
                 : "Disconnected"}
           </p>
           <p className="mb-4 text-center text-sm text-slate-300">{statusLine}</p>
-          <TotalTransactionsCounter className="mb-4" />
           <div className="flex flex-col gap-3">
-            {connectors.map((connector) => (
+            {visibleConnectors.map((connector) => (
               <button
                 key={connector.uid}
                 type="button"
@@ -393,8 +390,6 @@ export function ConnectWallet() {
           </div>
         ) : null}
 
-        <TotalTransactionsCounter className="mb-4" />
-
         <div className="mb-5 grid grid-cols-2 gap-3 rounded-2xl border border-slate-700 bg-slate-900/80 p-4 text-sm">
           <p>🔥 Streak: {streakLabel}</p>
           <p
@@ -454,62 +449,40 @@ export function ConnectWallet() {
             onPointerUp={() => setCoinPressedLocal(false)}
             onPointerCancel={() => setCoinPressedLocal(false)}
             whileHover={coinInteractive ? { scale: 1.02 } : undefined}
-            whileTap={coinInteractive ? { scale: 0.95 } : undefined}
+            whileTap={coinInteractive ? { scale: 0.96 } : undefined}
             transition={{ type: "spring", stiffness: 480, damping: 28 }}
-            className="relative z-10 h-56 w-56 cursor-pointer overflow-hidden rounded-full disabled:cursor-not-allowed disabled:opacity-40"
-            style={{ boxShadow: coinShadow }}
+            className="relative z-10 h-52 w-52 cursor-pointer overflow-hidden rounded-2xl bg-[#f4f4f5] p-[18%] disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ boxShadow: squareShadow }}
+            aria-label="Tap to mine BAZA"
           >
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{
-                background: `radial-gradient(circle at 28% 22%, #7ab8ff 0%, #3d84ff 14%, ${BASE_BLUE} 42%, #0046df 72%, #001d66 100%)`,
+            <motion.div
+              className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[18%]"
+              style={{ backgroundColor: BASE_BLUE }}
+              animate={{
+                scale: coinPressedLocal && coinInteractive ? 0.94 : 1,
               }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 rounded-full"
-              style={{
-                background:
-                  "radial-gradient(circle at 26% 20%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 22%, transparent 48%)",
-              }}
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute inset-0 rounded-full"
-              style={{
-                background:
-                  "radial-gradient(circle at 78% 88%, rgba(0,0,0,0.22) 0%, transparent 42%)",
-              }}
-              aria-hidden
-            />
-
-            <div
-              className="absolute left-1/2 top-1/2 z-[1] flex h-[62%] w-[62%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full"
-              style={{
-                background: `radial-gradient(circle at 34% 30%, rgba(0,25,90,0.55) 0%, rgba(0,50,160,0.35) 28%, ${BASE_BLUE} 58%, #1a65ff 92%)`,
-                boxShadow: [
-                  "inset 0 5px 14px rgba(0,0,0,0.48)",
-                  "inset 0 -4px 12px rgba(255,255,255,0.1)",
-                  "inset 0 0 0 1px rgba(0,0,0,0.28)",
-                  "0 1px 0 rgba(255,255,255,0.12)",
-                ].join(", "),
-              }}
+              transition={{ type: "spring", stiffness: 520, damping: 32 }}
             >
-              <span
-                className="relative text-3xl font-black tracking-[0.14em] sm:text-4xl sm:tracking-[0.16em]"
+              <div
+                className="pointer-events-none absolute inset-0"
                 style={{
-                  color: "rgba(232,240,255,0.96)",
+                  background:
+                    "linear-gradient(145deg, rgba(255,255,255,0.22) 0%, transparent 42%, rgba(0,0,0,0.12) 100%)",
+                }}
+                aria-hidden
+              />
+              <span
+                className="relative text-2xl font-black tracking-[0.18em] text-white sm:text-[1.65rem]"
+                style={{
                   textShadow: [
-                    "0 1px 0 rgba(255,255,255,0.35)",
-                    "0 -1px 1px rgba(0,0,0,0.55)",
-                    "0 2px 4px rgba(0,0,0,0.45)",
-                    "0 0 12px rgba(0,40,120,0.35)",
+                    "0 1px 0 rgba(255,255,255,0.25)",
+                    "0 2px 8px rgba(0,0,0,0.35)",
                   ].join(", "),
                 }}
               >
                 BAZA
               </span>
-            </div>
+            </motion.div>
 
             <AnimatePresence>
               {particles.map((particle) => (

@@ -8,18 +8,22 @@ import {
   http,
 } from "wagmi";
 import { base } from "wagmi/chains";
+import { farcasterMiniApp } from "@/config/farcasterMiniAppConnector";
 import { baseAccount, injected } from "wagmi/connectors";
 
 const BASE_MAINNET_RPC = "https://mainnet.base.org";
 
+let wagmiConfig: ReturnType<typeof createConfig> | undefined;
+
 /**
  * Wagmi config for Next.js App Router (SSR + cookie persistence).
- * Call once per client `Providers` mount via `useState(() => getConfig())`.
+ * Singleton — same instance for SSR `cookieToInitialState` and client provider.
  */
 export function getConfig() {
-  return createConfig({
+  wagmiConfig ??= createConfig({
     chains: [base],
     connectors: [
+      farcasterMiniApp(),
       baseAccount({ appName: "BAZA" }),
       injected({ target: "metaMask" }),
     ],
@@ -32,6 +36,7 @@ export function getConfig() {
     },
     dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
   });
+  return wagmiConfig;
 }
 
 declare module "wagmi" {

@@ -19,8 +19,6 @@ import {
   BAZA_TOKEN_ABI,
   BAZA_TOKEN_ADDRESS,
 } from "@/config/contracts";
-import { TOTAL_TRANSACTIONS_QUERY_KEY } from "@/components/TotalTransactionsCounter";
-
 type ClaimTokensButtonProps = {
   /** Whole $BAZA units to mint (matches `claimTokens(uint256 amount)`). */
   amount: bigint;
@@ -59,18 +57,30 @@ export function ClaimTokensButton({
     try {
       if (supportsAtomicBatch) {
         setPhase("batch");
-        const { id } = await sendCallsAsync({
-          calls: [
-            {
-              abi: BAZA_TOKEN_ABI,
-              to: BAZA_TOKEN_ADDRESS,
-              functionName: "claimTokens",
-              args: [amount],
-            },
-          ],
-          capabilities: BAZA_BUILDER_SEND_CALLS_CAPABILITIES,
-        });
-        await waitForCallsStatus(config, { id });
+        try {
+          const { id } = await sendCallsAsync({
+            calls: [
+              {
+                abi: BAZA_TOKEN_ABI,
+                to: BAZA_TOKEN_ADDRESS,
+                functionName: "claimTokens",
+                args: [amount],
+              },
+            ],
+            capabilities: BAZA_BUILDER_SEND_CALLS_CAPABILITIES,
+          });
+          await waitForCallsStatus(config, { id });
+        } catch {
+          setPhase("legacy");
+          const hash = await writeContractAsync({
+            address: BAZA_TOKEN_ADDRESS,
+            abi: BAZA_TOKEN_ABI,
+            functionName: "claimTokens",
+            args: [amount],
+            dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
+          });
+          await waitForTransactionReceipt(config, { hash });
+        }
       } else {
         setPhase("legacy");
         const hash = await writeContractAsync({
@@ -84,9 +94,6 @@ export function ClaimTokensButton({
       }
 
       await invalidateReads();
-      void queryClient.invalidateQueries({
-        queryKey: TOTAL_TRANSACTIONS_QUERY_KEY,
-      });
       onConfirmed();
     } finally {
       setPhase("idle");
