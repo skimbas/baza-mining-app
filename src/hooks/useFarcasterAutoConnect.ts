@@ -7,6 +7,7 @@ import { reconnect } from "wagmi/actions";
 import {
   detectAppHost,
   isBaseAppHost,
+  isFarcasterHost,
   resolveAppHost,
   type AppHost,
 } from "@/lib/miniAppHost";
@@ -20,8 +21,8 @@ type BootstrapPhase =
   | "done";
 
 /**
- * Detects mini app host and bootstraps the wallet connector for that host.
- * Farcaster Warpcast → Farcaster provider. Base App → injected host wallet (wagmi reconnect).
+ * Detects mini app host and bootstraps the Farcaster wallet in Warpcast.
+ * Base App uses wagmi cookie reconnect + manual connect (injected host wallet).
  */
 export function useFarcasterAutoConnect() {
   const config = useConfig();
@@ -54,7 +55,7 @@ export function useFarcasterAutoConnect() {
           hostRef.current = host;
           setAppHost(host);
 
-          if (host === "browser") {
+          if (!isFarcasterHost(host)) {
             finish();
             return;
           }
@@ -65,7 +66,7 @@ export function useFarcasterAutoConnect() {
         }
 
         const host = hostRef.current;
-        if (!host || host === "browser") {
+        if (!host || !isFarcasterHost(host)) {
           finish();
           return;
         }
@@ -117,7 +118,7 @@ export function useFarcasterAutoConnect() {
   const effectiveAppHost = resolveAppHost(appHost);
   const isFarcasterMiniApp = effectiveAppHost === "farcaster";
   const isBaseApp = isBaseAppHost(effectiveAppHost ?? "browser");
-  const isBootstrapping = (isFarcasterMiniApp || isBaseApp) && !walletReady;
+  const isBootstrapping = isFarcasterMiniApp && !walletReady;
 
   return {
     appHost,

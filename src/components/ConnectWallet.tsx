@@ -84,7 +84,7 @@ export function ConnectWallet() {
     useWalletCapabilities();
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
-  const { isBaseApp, isBootstrapping, appHost } = useFarcasterAutoConnect();
+  const { isBootstrapping, appHost } = useFarcasterAutoConnect();
   const { theme, themeId, setThemeId, themes } = useUiTheme();
   const { disconnectAsync, isPending: isDisconnectPending } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
@@ -302,9 +302,7 @@ export function ConnectWallet() {
       return (
         <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-slate-100">
           <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-sm">
-            {isBaseApp
-              ? "Connecting Base Account…"
-              : "Connecting Farcaster wallet…"}
+            Connecting Farcaster wallet…
           </div>
         </div>
       );
