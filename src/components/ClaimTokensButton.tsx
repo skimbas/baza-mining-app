@@ -27,6 +27,8 @@ type ClaimTokensButtonProps = {
   disabled: boolean;
   /** When true, prefer EIP-5792 `wallet_sendCalls` (atomic batch path). */
   supportsAtomicBatch: boolean;
+  /** Append Base builder ERC-8021 suffix (not supported in Farcaster). */
+  attachBuilderCode: boolean;
   /** Visual variant (glow when many unclaimed clicks). */
   highlight: boolean;
   theme: UiTheme;
@@ -39,6 +41,7 @@ export function ClaimTokensButton({
   amount,
   disabled,
   supportsAtomicBatch,
+  attachBuilderCode,
   highlight,
   theme,
   compact = false,
@@ -60,6 +63,10 @@ export function ClaimTokensButton({
     if (disabled || amount <= BigInt(0) || status !== "connected" || !address) {
       return;
     }
+
+    const writeExtras = attachBuilderCode
+      ? { dataSuffix: BAZA_BUILDER_DATA_SUFFIX }
+      : {};
 
     try {
       if (supportsAtomicBatch) {
@@ -88,7 +95,7 @@ export function ClaimTokensButton({
             abi: BAZA_TOKEN_ABI,
             functionName: "claimTokens",
             args: [amount],
-            dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
+            ...writeExtras,
           });
           await waitForTransactionReceipt(config, { hash });
         }
@@ -99,7 +106,7 @@ export function ClaimTokensButton({
           abi: BAZA_TOKEN_ABI,
           functionName: "claimTokens",
           args: [amount],
-          dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
+          ...writeExtras,
         });
         await waitForTransactionReceipt(config, { hash });
       }
@@ -112,6 +119,7 @@ export function ClaimTokensButton({
   }, [
     address,
     amount,
+    attachBuilderCode,
     config,
     disabled,
     invalidateReads,

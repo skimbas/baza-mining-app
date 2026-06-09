@@ -4,13 +4,15 @@ import { useMemo } from "react";
 import { useCapabilities, useConnection } from "wagmi";
 
 import { BAZA_CHAIN_ID } from "@/config/contracts";
+import { resolveAppHost, type AppHost } from "@/lib/miniAppHost";
 import { FARCASTER_CONNECTOR_ID } from "@/lib/walletConnectors";
 
 /**
  * EIP-5792 / `wallet_getCapabilities` — batching (atomic) and paymaster hints.
  */
-export function useWalletCapabilities() {
+export function useWalletCapabilities(appHost: AppHost | null = null) {
   const { address, status, connector } = useConnection();
+  const resolvedHost = resolveAppHost(appHost);
 
   const {
     data,
@@ -28,7 +30,10 @@ export function useWalletCapabilities() {
   });
 
   const { supportsAtomicBatch, supportsPaymasterService } = useMemo(() => {
-    if (connector?.id === FARCASTER_CONNECTOR_ID) {
+    if (
+      connector?.id === FARCASTER_CONNECTOR_ID ||
+      resolvedHost === "farcaster"
+    ) {
       return { supportsAtomicBatch: false, supportsPaymasterService: false };
     }
 
@@ -37,7 +42,7 @@ export function useWalletCapabilities() {
       atomic?.status === "supported" || atomic?.status === "ready";
     const supportsPaymasterService = data?.paymasterService?.supported === true;
     return { supportsAtomicBatch, supportsPaymasterService };
-  }, [connector?.id, data]);
+  }, [connector?.id, data, resolvedHost]);
 
   return {
     capabilities: data,

@@ -10,7 +10,10 @@ import {
   BAZA_TOKEN_ABI,
   BAZA_TOKEN_ADDRESS,
 } from "@/config/contracts";
-import { BAZA_BUILDER_DATA_SUFFIX } from "@/config/builderCode";
+import {
+  builderWriteExtras,
+  shouldAttachBuilderCode,
+} from "@/lib/builderAttribution";
 import { useClicker } from "@/hooks/useClicker";
 import { useFarcasterAutoConnect } from "@/hooks/useFarcasterAutoConnect";
 import { useUiTheme } from "@/hooks/useUiTheme";
@@ -79,12 +82,15 @@ export function ConnectWallet() {
     isReconnecting,
     isDisconnected,
     status,
+    connector,
   } = useConnection();
+  const { isBootstrapping, appHost } = useFarcasterAutoConnect();
+  const effectiveAppHost = resolveAppHost(appHost);
+  const inFarcasterMiniApp = effectiveAppHost === "farcaster";
   const { supportsAtomicBatch, supportsPaymasterService } =
-    useWalletCapabilities();
+    useWalletCapabilities(effectiveAppHost);
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
-  const { isBootstrapping, appHost } = useFarcasterAutoConnect();
   const { theme, themeId, setThemeId, themes } = useUiTheme();
   const { disconnectAsync, isPending: isDisconnectPending } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
@@ -257,7 +263,7 @@ export function ConnectWallet() {
           address: BAZA_TOKEN_ADDRESS,
           abi: BAZA_TOKEN_ABI,
           functionName: "dailyCheckIn",
-          dataSuffix: BAZA_BUILDER_DATA_SUFFIX,
+          ...builderWriteExtras(effectiveAppHost, connector?.id),
         });
       } catch {
         txActionRef.current = null;
@@ -265,8 +271,6 @@ export function ConnectWallet() {
       }
     })();
   };
-
-  const effectiveAppHost = resolveAppHost(appHost);
 
   const visibleConnectors = useMemo(
     () => filterVisibleConnectors(connectors, effectiveAppHost),
@@ -408,7 +412,11 @@ export function ConnectWallet() {
             <ClaimTokensButton
               amount={BigInt(unclaimedBz)}
               disabled={!canClaim}
-              supportsAtomicBatch={supportsAtomicBatch}
+              supportsAtomicBatch={supportsAtomicBatch && !inFarcasterMiniApp}
+              attachBuilderCode={shouldAttachBuilderCode(
+                effectiveAppHost,
+                connector?.id,
+              )}
               highlight={unclaimedBz >= requiredTapsForClaim}
               theme={theme}
               compact
