@@ -5,13 +5,52 @@ export const WARPCAST_CLIENT_FID = 9152;
 
 export type AppHost = "browser" | "farcaster" | "base-app";
 
+type EthereumProvider = {
+  isCoinbaseBrowser?: boolean;
+  isCoinbaseWallet?: boolean;
+  isBase?: boolean;
+};
+
 /**
  * Base App in-app browser (standard web apps opened inside the Base mobile app).
  * @see https://docs.base.org/apps/guides/migrate-to-standard-web-app
  */
 export function isBaseAppBrowser() {
-  if (typeof navigator === "undefined") return false;
-  return /\bBase\b/i.test(navigator.userAgent);
+  if (typeof window === "undefined") return false;
+
+  const ua = navigator.userAgent;
+  if (/\bBase\b/i.test(ua) || /BaseApp/i.test(ua)) return true;
+
+  const ethereum = (window as Window & { ethereum?: EthereumProvider }).ethereum;
+  if (
+    ethereum?.isCoinbaseBrowser ||
+    ethereum?.isCoinbaseWallet ||
+    ethereum?.isBase
+  ) {
+    return true;
+  }
+
+  if (
+    typeof document !== "undefined" &&
+    /base\.app/i.test(document.referrer)
+  ) {
+    return true;
+  }
+
+  const webView = (window as Window & { ReactNativeWebView?: unknown })
+    .ReactNativeWebView;
+  if (webView && /iPhone|iPad|iPod|Android/i.test(ua)) {
+    return true;
+  }
+
+  return false;
+}
+
+/** Apply sync heuristics on top of async host detection. */
+export function resolveAppHost(host: AppHost | null): AppHost | null {
+  if (host === "farcaster") return host;
+  if (isBaseAppBrowser()) return "base-app";
+  return host;
 }
 
 /**
@@ -31,7 +70,7 @@ export async function detectAppHost(): Promise<AppHost> {
       return "base-app";
     }
   } catch {
-    // Fall through to UA-based detection.
+    // Fall through to UA/provider-based detection.
   }
 
   if (isBaseAppBrowser()) {

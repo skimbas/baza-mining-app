@@ -7,13 +7,10 @@ import { reconnect } from "wagmi/actions";
 import {
   detectAppHost,
   isBaseAppHost,
-  isFarcasterHost,
+  resolveAppHost,
   type AppHost,
 } from "@/lib/miniAppHost";
-import {
-  BASE_ACCOUNT_CONNECTOR_ID,
-  FARCASTER_CONNECTOR_ID,
-} from "@/lib/walletConnectors";
+import { getHostConnector } from "@/lib/walletConnectors";
 
 type BootstrapPhase =
   | "idle"
@@ -24,7 +21,7 @@ type BootstrapPhase =
 
 /**
  * Detects mini app host and bootstraps the wallet connector for that host.
- * Farcaster Warpcast → Farcaster provider. Base App → baseAccount (wagmi reconnect).
+ * Farcaster Warpcast → Farcaster provider. Base App → injected host wallet (wagmi reconnect).
  */
 export function useFarcasterAutoConnect() {
   const config = useConfig();
@@ -51,7 +48,8 @@ export function useFarcasterAutoConnect() {
       try {
         if (phaseRef.current === "idle") {
           phaseRef.current = "detecting";
-          const host = await detectAppHost();
+          const detectedHost = await detectAppHost();
+          const host = resolveAppHost(detectedHost) ?? detectedHost;
           if (cancelled) return;
           hostRef.current = host;
           setAppHost(host);
@@ -72,24 +70,18 @@ export function useFarcasterAutoConnect() {
           return;
         }
 
-        const targetConnectorId = isFarcasterHost(host)
-          ? FARCASTER_CONNECTOR_ID
-          : BASE_ACCOUNT_CONNECTOR_ID;
-
-        const hostConnector = connectors.find(
-          (item) => item.id === targetConnectorId,
-        );
+        const hostConnector = getHostConnector(connectors, host);
         if (!hostConnector) {
           finish();
           return;
         }
 
-        if (isConnected && connector?.id === targetConnectorId) {
+        if (isConnected && connector?.uid === hostConnector.uid) {
           finish();
           return;
         }
 
-        if (isConnected && connector?.id !== targetConnectorId) {
+        if (isConnected && connector?.uid !== hostConnector.uid) {
           if (phaseRef.current !== "disconnect-wrong") {
             phaseRef.current = "disconnect-wrong";
             await disconnectAsync();
@@ -115,15 +107,16 @@ export function useFarcasterAutoConnect() {
     };
   }, [
     config,
-    connector?.id,
+    connector?.uid,
     connectors,
     disconnectAsync,
     isConnected,
     status,
   ]);
 
-  const isFarcasterMiniApp = appHost === "farcaster";
-  const isBaseApp = isBaseAppHost(appHost ?? "browser");
+  const effectiveAppHost = resolveAppHost(appHost);
+  const isFarcasterMiniApp = effectiveAppHost === "farcaster";
+  const isBaseApp = isBaseAppHost(effectiveAppHost ?? "browser");
   const isBootstrapping = (isFarcasterMiniApp || isBaseApp) && !walletReady;
 
   return {

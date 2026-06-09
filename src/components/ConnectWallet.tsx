@@ -16,6 +16,7 @@ import { useFarcasterAutoConnect } from "@/hooks/useFarcasterAutoConnect";
 import { useUiTheme } from "@/hooks/useUiTheme";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
+import { resolveAppHost } from "@/lib/miniAppHost";
 import {
   connectorLabel,
   filterVisibleConnectors,
@@ -264,9 +265,11 @@ export function ConnectWallet() {
     })();
   };
 
+  const effectiveAppHost = resolveAppHost(appHost);
+
   const visibleConnectors = useMemo(
-    () => filterVisibleConnectors(connectors, appHost),
-    [appHost, connectors],
+    () => filterVisibleConnectors(connectors, effectiveAppHost),
+    [connectors, effectiveAppHost],
   );
 
   const [connectingConnectorUid, setConnectingConnectorUid] = useState<
@@ -342,7 +345,7 @@ export function ConnectWallet() {
               >
                 {isThisPending
                   ? "Connecting…"
-                  : `Connect with ${connectorLabel(connectorItem.id, connectorItem.name)}`}
+                  : `Connect with ${connectorLabel(connectorItem.id, connectorItem.name, effectiveAppHost)}`}
               </button>
               );
             })}
