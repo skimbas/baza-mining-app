@@ -8,8 +8,10 @@ export function farcasterMiniApp() {
     target: {
       id: "farcaster",
       name: "Farcaster",
-      provider: sdk.wallet.ethProvider as EIP1193Provider,
+      provider() {
+        return sdk.wallet.ethProvider as EIP1193Provider;
+      },
     },
-    shimDisconnect: true,
+    shimDisconnect: false,
   });
 }

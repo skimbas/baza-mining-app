@@ -14,6 +14,10 @@ import {
   builderWriteExtras,
   shouldAttachBuilderCode,
 } from "@/lib/builderAttribution";
+import {
+  farcasterWriteContract,
+  waitForFarcasterTransaction,
+} from "@/lib/farcasterWrite";
 import { useClicker } from "@/hooks/useClicker";
 import { useFarcasterAutoConnect } from "@/hooks/useFarcasterAutoConnect";
 import { useUiTheme } from "@/hooks/useUiTheme";
@@ -49,6 +53,7 @@ const BAZA_WATERMARK_DATA_URI =
   '")';
 
 const succeededTxHashes = new Set<string>();
+const BASE_MAINNET_RPC = "https://mainnet.base.org";
 
 /** Must match `BazaToken.MIN_CHECKIN_INTERVAL` after redeploy (24 hours). */
 const CHECKIN_COOLDOWN_SEC = BigInt(86400);
@@ -117,6 +122,8 @@ export function ConnectWallet() {
     addBonusTaps,
   } = useClicker();
   const txActionRef = useRef<"checkin" | null>(null);
+  const [claimPending, setClaimPending] = useState(false);
+  const [checkInPendingLocal, setCheckInPendingLocal] = useState(false);
   const [nowSec, setNowSec] = useState(() =>
     Math.floor(Date.now() / 1000),
   );
@@ -125,6 +132,8 @@ export function ConnectWallet() {
 
   const isCorrectNetwork = chainId === BAZA_CHAIN.id;
 
+  const isWalletBusy = claimPending || checkInPendingLocal;
+
   const { data: streakData, refetch: refetchStreak } = useReadContract({
     address: BAZA_TOKEN_ADDRESS,
     abi: BAZA_TOKEN_ABI,
@@ -132,7 +141,7 @@ export function ConnectWallet() {
     args: address ? [address] : undefined,
     query: {
       enabled: Boolean(address && isCorrectNetwork),
-      refetchInterval: 5000,
+      refetchInterval: isWalletBusy ? false : 5000,
     },
   });
 
@@ -143,7 +152,7 @@ export function ConnectWallet() {
     args: address ? [address] : undefined,
     query: {
       enabled: Boolean(address && isCorrectNetwork),
-      refetchInterval: 5000,
+      refetchInterval: isWalletBusy ? false : 5000,
     },
   });
 
@@ -155,16 +164,17 @@ export function ConnectWallet() {
       args: address ? [address] : undefined,
       query: {
         enabled: Boolean(address && isCorrectNetwork),
-        refetchInterval: 5000,
+        refetchInterval: isWalletBusy ? false : 5000,
       },
     });
 
   useEffect(() => {
+    if (isWalletBusy) return;
     const id = window.setInterval(() => {
       setNowSec(Math.floor(Date.now() / 1000));
     }, 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [isWalletBusy]);
 
   const streakBig =
     typeof streakData === "bigint" ? streakData : BigInt(0);
@@ -194,7 +204,8 @@ export function ConnectWallet() {
     lastCheckInSec > BigInt(0) && nowBig > lastCheckInSec + STREAK_GRACE_SEC;
 
   const isCheckInPending =
-    (isWritePending || isConfirmingTx) && txActionRef.current === "checkin";
+    checkInPendingLocal ||
+    ((isWritePending || isConfirmingTx) && txActionRef.current === "checkin");
   const unclaimedBz = clicks;
   const tapsTowardClaim = Math.min(clicks, requiredTapsForClaim);
   const canClaim =
@@ -243,7 +254,6 @@ export function ConnectWallet() {
           void fireSeventhDayConfetti();
         }
       }
-
     })();
   }, [
     txHash,
@@ -254,11 +264,51 @@ export function ConnectWallet() {
     refetchStreak,
   ]);
 
+  const runCheckInSuccessEffects = async () => {
+    const streakResult = await refetchStreak();
+    await refetchBalance();
+    await refetchLastCheckIn();
+
+    const s = streakResult.data;
+    if (
+      typeof s === "bigint" &&
+      s > BigInt(0) &&
+      s % BigInt(7) === BigInt(0)
+    ) {
+      const { fireSeventhDayConfetti } = await import("@/lib/daySevenConfetti");
+      void fireSeventhDayConfetti();
+    }
+  };
+
   const handleDailyCheckIn = () => {
-    if (isCheckInPending || !isCorrectNetwork || !canDailyCheckIn) return;
+    if (isCheckInPending || !isCorrectNetwork || !canDailyCheckIn || !address) {
+      return;
+    }
+
     txActionRef.current = "checkin";
     void (async () => {
       try {
+        if (inFarcasterMiniApp) {
+          setCheckInPendingLocal(true);
+          const hash = await farcasterWriteContract({
+            chain: BAZA_CHAIN,
+            account: address,
+            address: BAZA_TOKEN_ADDRESS,
+            abi: BAZA_TOKEN_ABI,
+            functionName: "dailyCheckIn",
+            args: [],
+            rpcUrl: BASE_MAINNET_RPC,
+          });
+          await waitForFarcasterTransaction(
+            BAZA_CHAIN,
+            BASE_MAINNET_RPC,
+            hash,
+          );
+          await runCheckInSuccessEffects();
+          txActionRef.current = null;
+          return;
+        }
+
         await writeContractAsync({
           address: BAZA_TOKEN_ADDRESS,
           abi: BAZA_TOKEN_ABI,
@@ -268,6 +318,8 @@ export function ConnectWallet() {
       } catch {
         txActionRef.current = null;
         resetWriteContract();
+      } finally {
+        setCheckInPendingLocal(false);
       }
     })();
   };
@@ -417,10 +469,12 @@ export function ConnectWallet() {
                 effectiveAppHost,
                 connector?.id,
               )}
+              useFarcasterWallet={inFarcasterMiniApp}
               highlight={unclaimedBz >= requiredTapsForClaim}
               theme={theme}
               compact
               onConfirmed={() => resetClicks()}
+              onPendingChange={setClaimPending}
             />
           </div>
 

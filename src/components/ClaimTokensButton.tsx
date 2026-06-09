@@ -4,21 +4,27 @@ import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useCallback, useState } from "react";
 import {
+  sendCalls,
   waitForCallsStatus,
   waitForTransactionReceipt,
   writeContract,
 } from "wagmi/actions";
-import { useConfig, useConnection, useSendCalls } from "wagmi";
+import { useConfig, useConnection } from "wagmi";
 
 import {
   BAZA_BUILDER_DATA_SUFFIX,
   BAZA_BUILDER_SEND_CALLS_CAPABILITIES,
 } from "@/config/builderCode";
 import {
+  BAZA_CHAIN,
   BAZA_TOKEN_ABI,
   BAZA_TOKEN_ADDRESS,
 } from "@/config/contracts";
 import type { UiTheme } from "@/config/uiThemes";
+import {
+  farcasterWriteContract,
+  waitForFarcasterTransaction,
+} from "@/lib/farcasterWrite";
 import { isSendCallsUnsupported, isUserRejection } from "@/lib/walletErrors";
 
 type ClaimTokensButtonProps = {
@@ -29,12 +35,15 @@ type ClaimTokensButtonProps = {
   supportsAtomicBatch: boolean;
   /** Append Base builder ERC-8021 suffix (not supported in Farcaster). */
   attachBuilderCode: boolean;
+  /** Use the Warpcast host wallet directly instead of wagmi writes. */
+  useFarcasterWallet: boolean;
   /** Visual variant (glow when many unclaimed clicks). */
   highlight: boolean;
   theme: UiTheme;
   compact?: boolean;
   className?: string;
   onConfirmed: () => void;
+  onPendingChange?: (pending: boolean) => void;
 };
 
 export function ClaimTokensButton({
@@ -42,18 +51,18 @@ export function ClaimTokensButton({
   disabled,
   supportsAtomicBatch,
   attachBuilderCode,
+  useFarcasterWallet,
   highlight,
   theme,
   compact = false,
   className,
   onConfirmed,
+  onPendingChange,
 }: ClaimTokensButtonProps) {
   const config = useConfig();
   const queryClient = useQueryClient();
   const { address, status } = useConnection();
   const [phase, setPhase] = useState<"idle" | "batch" | "legacy">("idle");
-
-  const { sendCallsAsync, isPending: isSendCallsPending } = useSendCalls();
 
   const invalidateReads = useCallback(async () => {
     await queryClient.invalidateQueries();
@@ -68,11 +77,28 @@ export function ClaimTokensButton({
       ? { dataSuffix: BAZA_BUILDER_DATA_SUFFIX }
       : {};
 
+    onPendingChange?.(true);
     try {
-      if (supportsAtomicBatch) {
+      if (useFarcasterWallet) {
+        setPhase("legacy");
+        const hash = await farcasterWriteContract({
+          chain: BAZA_CHAIN,
+          account: address,
+          address: BAZA_TOKEN_ADDRESS,
+          abi: BAZA_TOKEN_ABI,
+          functionName: "claimTokens",
+          args: [amount],
+          rpcUrl: "https://mainnet.base.org",
+        });
+        await waitForFarcasterTransaction(
+          BAZA_CHAIN,
+          "https://mainnet.base.org",
+          hash,
+        );
+      } else if (supportsAtomicBatch) {
         setPhase("batch");
         try {
-          const { id } = await sendCallsAsync({
+          const { id } = await sendCalls(config, {
             calls: [
               {
                 abi: BAZA_TOKEN_ABI,
@@ -115,6 +141,7 @@ export function ClaimTokensButton({
       onConfirmed();
     } finally {
       setPhase("idle");
+      onPendingChange?.(false);
     }
   }, [
     address,
@@ -124,13 +151,13 @@ export function ClaimTokensButton({
     disabled,
     invalidateReads,
     onConfirmed,
-    queryClient,
-    sendCallsAsync,
+    onPendingChange,
     status,
     supportsAtomicBatch,
+    useFarcasterWallet,
   ]);
 
-  const isPending = isSendCallsPending || phase !== "idle";
+  const isPending = phase !== "idle";
 
   const pendingLabel =
     phase === "batch"
