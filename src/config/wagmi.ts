@@ -24,8 +24,8 @@ export function getConfig() {
     chains: [base],
     connectors: [
       farcasterMiniApp(),
+      injected(),
       baseAccount({ appName: "BAZA" }),
-      injected({ target: "metaMask" }),
     ],
     ssr: true,
     storage: createStorage({

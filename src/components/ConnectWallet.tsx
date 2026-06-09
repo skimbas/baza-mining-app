@@ -16,6 +16,10 @@ import { useFarcasterAutoConnect } from "@/hooks/useFarcasterAutoConnect";
 import { useUiTheme } from "@/hooks/useUiTheme";
 import { useWalletCapabilities } from "@/hooks/useWalletCapabilities";
 import { formatBzCompact, formatBzExact } from "@/lib/bzFormat";
+import {
+  connectorLabel,
+  filterVisibleConnectors,
+} from "@/lib/walletConnectors";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -62,16 +66,6 @@ function formatCountdownSeconds(totalSeconds: bigint): string {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function connectorLabel(connectorId: string, name: string) {
-  const id = connectorId.toLowerCase();
-  if (id.includes("farcaster")) return "Farcaster Wallet";
-  if (id.includes("base") || name.toLowerCase().includes("base"))
-    return "Base Smart Wallet";
-  if (id.includes("injected") || name.toLowerCase().includes("meta"))
-    return "MetaMask (browser)";
-  return name;
-}
-
 export function ConnectWallet() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -89,7 +83,7 @@ export function ConnectWallet() {
     useWalletCapabilities();
   const chainId = useChainId();
   const { connect, connectors, isPending: isConnectPending } = useConnect();
-  const { inMiniApp, isBootstrapping, appHost } = useFarcasterAutoConnect();
+  const { isBaseApp, isBootstrapping, appHost } = useFarcasterAutoConnect();
   const { theme, themeId, setThemeId, themes } = useUiTheme();
   const { disconnectAsync, isPending: isDisconnectPending } = useDisconnect();
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
@@ -270,21 +264,10 @@ export function ConnectWallet() {
     })();
   };
 
-  const visibleConnectors = useMemo(() => {
-    const filtered =
-      inMiniApp === true
-        ? connectors.filter((item) => item.id === "farcaster")
-        : appHost === "base-app"
-          ? connectors.filter((item) => item.id === "baseAccount")
-          : connectors.filter((item) => item.id !== "farcaster");
-
-    const seen = new Set<string>();
-    return filtered.filter((item) => {
-      if (seen.has(item.id)) return false;
-      seen.add(item.id);
-      return true;
-    });
-  }, [appHost, connectors, inMiniApp]);
+  const visibleConnectors = useMemo(
+    () => filterVisibleConnectors(connectors, appHost),
+    [appHost, connectors],
+  );
 
   const [connectingConnectorUid, setConnectingConnectorUid] = useState<
     string | null
@@ -315,7 +298,9 @@ export function ConnectWallet() {
       return (
         <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6 text-slate-100">
           <div className="rounded-2xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-sm">
-            Connecting Farcaster wallet…
+            {isBaseApp
+              ? "Connecting Base Account…"
+              : "Connecting Farcaster wallet…"}
           </div>
         </div>
       );
