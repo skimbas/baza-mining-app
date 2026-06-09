@@ -3,13 +3,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useCallback, useState } from "react";
-import { waitForCallsStatus, waitForTransactionReceipt } from "wagmi/actions";
 import {
-  useConfig,
-  useConnection,
-  useSendCalls,
-  useWriteContract,
-} from "wagmi";
+  waitForCallsStatus,
+  waitForTransactionReceipt,
+  writeContract,
+} from "wagmi/actions";
+import { useConfig, useConnection, useSendCalls } from "wagmi";
 
 import {
   BAZA_BUILDER_DATA_SUFFIX,
@@ -20,6 +19,7 @@ import {
   BAZA_TOKEN_ADDRESS,
 } from "@/config/contracts";
 import type { UiTheme } from "@/config/uiThemes";
+import { isSendCallsUnsupported, isUserRejection } from "@/lib/walletErrors";
 
 type ClaimTokensButtonProps = {
   /** Whole $BAZA units to mint (matches `claimTokens(uint256 amount)`). */
@@ -51,7 +51,6 @@ export function ClaimTokensButton({
   const [phase, setPhase] = useState<"idle" | "batch" | "legacy">("idle");
 
   const { sendCallsAsync, isPending: isSendCallsPending } = useSendCalls();
-  const { writeContractAsync, isPending: isWritePending } = useWriteContract();
 
   const invalidateReads = useCallback(async () => {
     await queryClient.invalidateQueries();
@@ -78,9 +77,13 @@ export function ClaimTokensButton({
             capabilities: BAZA_BUILDER_SEND_CALLS_CAPABILITIES,
           });
           await waitForCallsStatus(config, { id });
-        } catch {
+        } catch (error) {
+          if (isUserRejection(error) || !isSendCallsUnsupported(error)) {
+            throw error;
+          }
+
           setPhase("legacy");
-          const hash = await writeContractAsync({
+          const hash = await writeContract(config, {
             address: BAZA_TOKEN_ADDRESS,
             abi: BAZA_TOKEN_ABI,
             functionName: "claimTokens",
@@ -91,7 +94,7 @@ export function ClaimTokensButton({
         }
       } else {
         setPhase("legacy");
-        const hash = await writeContractAsync({
+        const hash = await writeContract(config, {
           address: BAZA_TOKEN_ADDRESS,
           abi: BAZA_TOKEN_ABI,
           functionName: "claimTokens",
@@ -117,11 +120,9 @@ export function ClaimTokensButton({
     sendCallsAsync,
     status,
     supportsAtomicBatch,
-    writeContractAsync,
   ]);
 
-  const isPending =
-    isSendCallsPending || isWritePending || phase !== "idle";
+  const isPending = isSendCallsPending || phase !== "idle";
 
   const pendingLabel =
     phase === "batch"

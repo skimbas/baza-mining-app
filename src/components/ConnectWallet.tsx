@@ -187,7 +187,8 @@ export function ConnectWallet() {
   const streakBrokenUi =
     lastCheckInSec > BigInt(0) && nowBig > lastCheckInSec + STREAK_GRACE_SEC;
 
-  const isCheckInPending = isWritePending || isConfirmingTx;
+  const isCheckInPending =
+    (isWritePending || isConfirmingTx) && txActionRef.current === "checkin";
   const unclaimedBz = clicks;
   const tapsTowardClaim = Math.min(clicks, requiredTapsForClaim);
   const canClaim =
